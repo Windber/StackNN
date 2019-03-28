@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import torch
 import torch.autograd as autograd
@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import random
 
-from model import Model as Model
+from .model import Model as Model
 
 
 class Model(Model):

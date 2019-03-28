@@ -3,7 +3,7 @@ Generate a list of random sentences of a given derivation depth from a
 context-free grammar. Code by Dana Angluin. The main function is
 random_sentences.
 """
-from __future__ import division
+
 
 import random
 
@@ -32,7 +32,7 @@ def random_sentences(count, depth, gr):
     nonterminals = nonterminals_from_grammar(gr)
     gr_table = make_table(depth, gr)
     sentences = [random_from_form([gr.start()], depth, gr_table,
-                                  nonterminals, gr) for _ in xrange(count)]
+                                  nonterminals, gr) for _ in range(count)]
     return sentences
 
 
@@ -62,7 +62,7 @@ def make_table(depth, gr):
             table[(prod, 1)] = 1
         else:
             table[(prod, 1)] = 0
-    for k in xrange(2, depth + 1):
+    for k in range(2, depth + 1):
         for prod in productions:
             table[(prod, k)] = count_production_depth(prod, k, table, gr)
     return table
@@ -117,7 +117,7 @@ def select_from_dist(prob):
     """
     x = random.random()
     cumulative = 0.0
-    for i in xrange(len(prob)):
+    for i in range(len(prob)):
         if x <= cumulative + prob[i]:
             return i
         else:
@@ -374,30 +374,30 @@ if __name__ == "__main__":
 
     # NB: the dyck_grammar is NOT unambiguous (S -> S S)
     dgr_table = make_table(6, dgr)
-    print "dyck_grammar for 4 from count_nonterminal_depth"
-    print count_nonterminal_depth(dgr.start(), 4, dgr_table, dgr)
-    print "nltk generate: number of sentences for dyck grammar at depth = 5"
-    print len(list(generate(dgr, depth=5)))
-    print "The dyck_grammar is ambiguous!"
+    print("dyck_grammar for 4 from count_nonterminal_depth")
+    print(count_nonterminal_depth(dgr.start(), 4, dgr_table, dgr))
+    print("nltk generate: number of sentences for dyck grammar at depth = 5")
+    print(len(list(generate(dgr, depth=5))))
+    print("The dyck_grammar is ambiguous!")
 
     # unambig_agreement_grammar
     # this agrees with the count for depth = 16 in generate
     uagr_table = make_table(15, uagr)
-    print "unambig_agreement_grammar for 15 from count_nonterminal_depth"
-    print count_nonterminal_depth(uagr.start(), 15, uagr_table, uagr)
+    print("unambig_agreement_grammar for 15 from count_nonterminal_depth")
+    print(count_nonterminal_depth(uagr.start(), 15, uagr_table, uagr))
 
     # exp_eval_grammar
     # this agrees with the count for depth = 6 in generate
     eegr_table = make_table(5, eegr)
-    print "exp_eval_grammar for 5 from count_nonterminal_depth"
-    print count_nonterminal_depth(eegr.start(), 5, eegr_table, eegr)
+    print("exp_eval_grammar for 5 from count_nonterminal_depth")
+    print(count_nonterminal_depth(eegr.start(), 5, eegr_table, eegr))
 
-    print "number of nltk depth = 7 sentences from dyck_grammar"
-    print count_nonterminal_depth(dgr.start(), 6, dgr_table, dgr)
+    print("number of nltk depth = 7 sentences from dyck_grammar")
+    print(count_nonterminal_depth(dgr.start(), 6, dgr_table, dgr))
 
-    print "a random sentence nltk depth = 7 from dyck_grammar"
-    print random_sentences(1, 6, dgr)
+    print("a random sentence nltk depth = 7 from dyck_grammar")
+    print(random_sentences(1, 6, dgr))
 
     sentences100 = random_sentences(100, 6, dgr)
-    print "maximum length among 100 nltk depth = 7 sentences from dyck_grammar"
-    print max([len(x) for x in sentences100])
+    print("maximum length among 100 nltk depth = 7 sentences from dyck_grammar")
+    print(max([len(x) for x in sentences100]))

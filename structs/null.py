@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import torch
 from torch.autograd import Variable

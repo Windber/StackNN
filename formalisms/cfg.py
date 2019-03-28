@@ -6,7 +6,7 @@ Example usage:
 
 """
 
-from __future__ import division
+
 
 from nltk import CFG
 

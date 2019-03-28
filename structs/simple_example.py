@@ -4,7 +4,7 @@ Unit tests and usage examples for SimpleStructs.
 import torch
 from torch.autograd import Variable
 
-from simple import Stack, Queue, to_string
+from .simple import Stack, Queue, to_string
 from testing import testcase
 
 
@@ -12,7 +12,7 @@ def test_push(s_struct, value, strength):
     v_str = to_string(value)
     s_str = to_string(strength.data)
 
-    print "\nPushing {} with strength {}".format(v_str, s_str)
+    print("\nPushing {} with strength {}".format(v_str, s_str))
     s_struct.push(value, strength)
     s_struct.log()
 
@@ -20,7 +20,7 @@ def test_push(s_struct, value, strength):
 
 
 def test_pop(s_struct, strength):
-    print "\nPopping with strength {:4f}".format(strength)
+    print("\nPopping with strength {:4f}".format(strength))
     s_struct.pop(strength)
     s_struct.log()
 
@@ -30,8 +30,8 @@ def test_pop(s_struct, strength):
 def test_read(s_struct, strength):
     s_str = to_string(strength)
 
-    print "\nReading with strength {}".format(s_str)
-    print to_string(s_struct.read(strength).data[0])
+    print("\nReading with strength {}".format(s_str))
+    print(to_string(s_struct.read(strength).data[0]))
 
     return
 

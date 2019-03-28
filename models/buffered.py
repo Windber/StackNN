@@ -1,9 +1,9 @@
-from __future__ import division
+
 
 import torch
 from torch.autograd import Variable
 
-from base import Model
+from .base import Model
 from controllers.feedforward import LinearSimpleStructController
 from structs import Stack, Operation
 from structs.buffers import InputBuffer, OutputBuffer
@@ -143,20 +143,20 @@ class BufferedModel(Model):
         self.init_model(1, trace_x)
 
         self._controller.start_log(num_steps)
-        for j in xrange(num_steps):
+        for j in range(num_steps):
             self.forward()
         self._controller.stop_log()
 
-        x_labels = ["x_" + str(i) for i in xrange(self._input_size)]
-        y_labels = ["y_" + str(i) for i in xrange(self._output_size)]
+        x_labels = ["x_" + str(i) for i in range(self._input_size)]
+        y_labels = ["y_" + str(i) for i in range(self._output_size)]
         i_labels = ["Pop", "Push", "Input", "Output"]
-        v_labels = ["v_" + str(i) for i in xrange(self._read_size)]
+        v_labels = ["v_" + str(i) for i in range(self._read_size)]
         labels = x_labels + y_labels + i_labels + v_labels
 
         import matplotlib.pyplot as plt
         plt.imshow(self._controller.log_data, cmap="hot", interpolation="nearest")
         plt.title("Trace")
-        plt.yticks(range(len(labels)), labels)
+        plt.yticks(list(range(len(labels))), labels)
         plt.xlabel("Time")
         plt.ylabel("Value")
         plt.show()
@@ -194,8 +194,8 @@ class BufferedModel(Model):
         v_start = e_out + 1
 
         self._controller.start_log(num_steps)
-        for j in xrange(num_steps):
-            print "\n-- Step {} of {} --".format(j, num_steps)
+        for j in range(num_steps):
+            print("\n-- Step {} of {} --".format(j, num_steps))
 
             self.forward()
 
@@ -208,22 +208,22 @@ class BufferedModel(Model):
             v = self._controller.log_data[v_start:, j].round(decimals=4)
             r = self._struct.read(1).data.numpy()[0].round(decimals=4)
 
-            print "\nInput: " + str(i)
-            print "Input Strength: " + str(e_in)
-            print "Output: " + str(o)
-            print "Output Strength: " + str(e_out)
+            print("\nInput: " + str(i))
+            print("Input Strength: " + str(e_in))
+            print("Output: " + str(o))
+            print("Output Strength: " + str(e_out))
 
-            print "\nPop Strength: " + str(u)
+            print("\nPop Strength: " + str(u))
 
-            print "\nPush Vector: " + str(v)
-            print "Push Strength: " + str(d)
+            print("\nPush Vector: " + str(v))
+            print("Push Strength: " + str(d))
 
-            print "\nRead Vector: " + str(r)
-            print "Struct Contents: "
+            print("\nRead Vector: " + str(r))
+            print("Struct Contents: ")
             self._struct.print_summary(0)
 
             if step:
-                raw_input("\nPress Enter to continue\n")
+                input("\nPress Enter to continue\n")
         self._controller.stop_log()
 
     def get_and_reset_reg_loss(self):
@@ -239,4 +239,4 @@ class BufferedModel(Model):
     def print_experiment_start(self):
         """Overriden to print buffered-specific params."""
         super(BufferedModel, self).print_experiment_start()
-        print "Reg Weight: " + str(self._reg_tracker.reg_weight)
+        print("Reg Weight: " + str(self._reg_tracker.reg_weight))

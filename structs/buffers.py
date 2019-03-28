@@ -1,4 +1,4 @@
-from simple import Queue
+from .simple import Queue
 
 
 class InputBuffer(Queue):

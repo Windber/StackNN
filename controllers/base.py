@@ -5,14 +5,13 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 
-class Controller(nn.Module):
+class Controller(nn.Module, metaclass=ABCMeta):
     """
     Abstract class for neural network Modules to be used in Models.
     Inherit from this class in order to create a custom architecture for
     a Model, or to create a controller compatible with a custom neural
     data structure.
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, input_size, read_size, output_size):
         """
@@ -211,7 +210,7 @@ class SimpleStructController(Controller):
         self.log_data[x_start:x_end, t] = x.data.numpy()
         self.log_data[y_start:y_end, t] = y.data.numpy()
         self.log_data[v_start:, t] = v.data.numpy()
-        for j in xrange(self._n_args):
+        for j in range(self._n_args):
             instruction = instructions[j].data.numpy()
             self.log_data[i_start + j, self._curr_log_entry] = instruction
 

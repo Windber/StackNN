@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 from numpy.testing import assert_approx_equal
 import torch

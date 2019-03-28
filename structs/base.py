@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 
-class Struct(nn.Module):
+class Struct(nn.Module, metaclass=ABCMeta):
     """
     Abstract class for implementing neural data structures, such as
     stacks, queues, and dequeues. Data structures inheriting from this
@@ -18,7 +18,6 @@ class Struct(nn.Module):
     operations. Please see the documentation for self.pop. self.push,
     and self.read for more details.
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, batch_size, embedding_size):
         """

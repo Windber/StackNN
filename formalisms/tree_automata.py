@@ -15,7 +15,7 @@ from numbers import Number
 
 import nltk.grammar as gr
 
-from trees import get_root_label, Tree
+from .trees import get_root_label, Tree
 
 
 def check_is_nonterminal(*nts):

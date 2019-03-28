@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 from abc import ABCMeta
 
@@ -106,7 +106,7 @@ class LanguageModelingTask(FormalTask):
         # If we shouldn't include unpredicted symbols in the loss, zero them
         # out.
         if not self.include_unpredicted_symbols_in_loss:
-            for k in xrange(len(valid_x)):
+            for k in range(len(valid_x)):
                 if y[k, j].data.item() not in self.to_predict_code:
                     valid_x[k] = 0
 
@@ -117,7 +117,7 @@ class LanguageModelingTask(FormalTask):
         # to mask them out for prediction and accuracy calculation.
         if self.include_unpredicted_symbols_in_loss:
             to_predict_x = valid_x.data.clone()
-            for k in xrange(len(valid_x)):
+            for k in range(len(valid_x)):
                 if y[k, j].data.item() not in self.to_predict_code:
                     to_predict_x[k] = 0
         else:

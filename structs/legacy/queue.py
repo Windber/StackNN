@@ -42,7 +42,7 @@ class Queue(nn.Module):
 		old_t = self.s.size(0) if self.s.size() else 0
 		s = Variable(torch.FloatTensor(old_t + 1, self.batch_size))
 		w = u
-		for i in xrange(old_t):
+		for i in range(old_t):
 			s_ = F.relu(self.s[i,:] - w)
 			w = F.relu(w - self.s[i,:])
 			s[i,:] = s_
@@ -53,7 +53,7 @@ class Queue(nn.Module):
 
 		# calculate r, which is of size [batch_size, embedding_size]
 		r = Variable(torch.zeros([self.batch_size, self.embedding_size]))
-		for i in xrange(old_t + 1):
+		for i in range(old_t + 1):
 			used = torch.sum(self.s[:i,:], 0) if i > 0 else self.zero
 			coeffs = torch.min(self.s[i,:], F.relu(1 - used))
 			# reformating coeffs into a matrix that can be multiplied element-wise
@@ -74,16 +74,16 @@ class Queue(nn.Module):
 		"""
 		V = self.V.data
 		if not V.shape:
-			print "[Empty queue]"
+			print("[Empty queue]")
 			return
-		for b in xrange(self.batch_size):
+		for b in range(self.batch_size):
 			if b > 0:
-				print "----------------------------"
-			for i in xrange(V.shape[0]):
-				print "{}\t|\t{:.2f}".format("\t".join("{:.2f}".format(x) for x in V[i, b,:]), self.s[i, b].data[0])
+				print("----------------------------")
+			for i in range(V.shape[0]):
+				print("{}\t|\t{:.2f}".format("\t".join("{:.2f}".format(x) for x in V[i, b,:]), self.s[i, b].data[0]))
 
 if __name__ == "__main__":
-	print "Running queue tests.."
+	print("Running queue tests..")
 	queue = Queue(1, 1)
 	queue.log()
 	out = queue.forward(
@@ -91,22 +91,22 @@ if __name__ == "__main__":
 		Variable(torch.FloatTensor([[0]])),
 		Variable(torch.FloatTensor([[.8]])),
 	)
-	print "\n\n"
+	print("\n\n")
 	queue.log()
-	print "read", out
+	print("read", out)
 	out = queue.forward(
 		Variable(torch.FloatTensor([[2]])),
 		Variable(torch.FloatTensor([[.1]])),
 		Variable(torch.FloatTensor([[.5]])),
 	)
-	print "\n\n"
+	print("\n\n")
 	queue.log()
-	print "read", out
+	print("read", out)
 	out = queue.forward(
 		Variable(torch.FloatTensor([[3]])),
 		Variable(torch.FloatTensor([[.9]])),
 		Variable(torch.FloatTensor([[.9]])),
 	)
-	print "\n\n"
+	print("\n\n")
 	queue.log()
-	print "read", out
+	print("read", out)

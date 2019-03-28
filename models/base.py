@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 from abc import ABCMeta, abstractmethod
 
@@ -9,14 +9,13 @@ from torch.autograd import Variable
 from structs.base import Struct
 
 
-class Model(nn.Module):
+class Model(nn.Module, metaclass=ABCMeta):
     """
     Abstract class for creating policy controllers (models) that
     operate a neural data structure, such as a neural stack or a neural
     queue. To create a custom model, create a class inhereting from
     this one that overrides self.__init__ and self.forward.
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, read_size, struct_type):
         """
@@ -157,6 +156,6 @@ class Model(nn.Module):
 
     def print_experiment_start(self):
         """Print model-specific hyperparameters at the start of an experiment."""
-        print "Model Type: " + str(type(self).__name__)
-        print "Controller Type: " + str(self.controller_type.__name__)
-        print "Struct Type: " + str(self.struct_type.__name__)
+        print("Model Type: " + str(type(self).__name__))
+        print("Controller Type: " + str(self.controller_type.__name__))
+        print("Struct Type: " + str(self.struct_type.__name__))

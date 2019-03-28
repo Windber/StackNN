@@ -1,10 +1,10 @@
-from stacknn_utils.testcase import testcase, test_module
+from .stacknn_utils.testcase import testcase, test_module
 
-import run
-import configs
+from . import run
+from . import configs
 
-import structs.tests
-import structs.regularization
+from . import structs.tests
+from . import structs.regularization
 
 # Configs that should be run automatically for e23 testing.
 e2e_test_configs = [
@@ -29,12 +29,12 @@ def test_main(config):
 def main():
     """ Run all the tests in the whole program. """
 
-    print("=" * 80)
+    print(("=" * 80))
     print("DATA STRUCTURE TESTS")
     test_module(structs.tests)
     test_module(structs.regularization)
 
-    print("=" * 80)
+    print(("=" * 80))
     print("END-TO-END TESTS")
     test_module(globals())
 

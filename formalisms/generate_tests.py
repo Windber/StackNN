@@ -3,9 +3,9 @@ Generate a list of random sentences of a given derivation depth from a
 context-free grammar. Code by Dana Angluin. The main function is
 random_sentences.
 """
-from __future__ import division
 
-from depth_generate import *
+
+from .depth_generate import *
 
 
 def random_cfg_test(count, depth, gr, savepath):
@@ -19,12 +19,12 @@ def random_cfg_test(count, depth, gr, savepath):
     where input is the generated string and output
     is the generated string with first symbol removed.
     """
-    print "number of sentences: " + str(count)
-    print "nltk depth: " + str(depth + 1)  # nltk depth is 1+depth
+    print("number of sentences: " + str(count))
+    print("nltk depth: " + str(depth + 1))  # nltk depth is 1+depth
 
     sentences = random_sentences(count, depth, gr)
-    print "maximum length sentence in test set"
-    print max([len(x) for x in sentences])
+    print("maximum length sentence in test set")
+    print(max([len(x) for x in sentences]))
     with open(savepath, "w") as f:
         for sentence in sentences:
             predict_sentence = sentence[1:]

@@ -1,11 +1,11 @@
-from __future__ import division
+
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from model import Model as Model
+from .model import Model as Model
 from structs.legacy.queue import Queue
 
 

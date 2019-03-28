@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import operator
 import random
@@ -13,6 +13,7 @@ from models import BufferedModel
 from controllers.feedforward import LinearSimpleStructController
 from controllers.recurrent import RNNSimpleStructController
 from structs import Stack
+from functools import reduce
 
 
 class EvaluationTask(FormalTask):
@@ -29,7 +30,7 @@ class EvaluationTask(FormalTask):
         def __init__(self, **kwargs):
             self.max_length = kwargs.get("max_length", 12)
             super(EvaluationTask.Params, self).__init__(**kwargs)
-            self.null = u"2"
+            self.null = "2"
             self.max_x_length = self.max_length
             self.max_y_length = self.max_length
 
@@ -43,7 +44,7 @@ class EvaluationTask(FormalTask):
         return self.alphabet_size
 
     def _init_alphabet(self, null):
-        return {u"0": 0, u"1": 1, u"2": 2}
+        return {"0": 0, "1": 1, "2": 2}
 
     """ Model Training """
 
@@ -128,12 +129,12 @@ class EvaluationTask(FormalTask):
         :return: A Variable containing the input values and a Variable
             containing the output values
         """
-        x_raw = [self.sample_str() for _ in xrange(num_tensors)]
-        y_raw = [[self.eval_func(s[:j + 1]) for j in xrange(len(s))]
+        x_raw = [self.sample_str() for _ in range(num_tensors)]
+        y_raw = [[self.eval_func(s[:j + 1]) for j in range(len(s))]
                  for s in x_raw]
 
-        x_sent = [[unicode(w) for w in s] for s in x_raw]
-        y_sent = [[unicode(w) for w in s] for s in y_raw]
+        x_sent = [[str(w) for w in s] for s in x_raw]
+        y_sent = [[str(w) for w in s] for s in y_raw]
 
         x_var = self.sentences_to_one_hot(self.max_length, *x_sent)
         y_var = self.sentences_to_codes(self.max_length, *y_sent)
@@ -176,7 +177,7 @@ class EvaluationTask(FormalTask):
 
         TODO: Make this a function of the grammar.
         """
-        return [u"#"]
+        return ["#"]
 
 
 class XORTask(EvaluationTask):
@@ -226,7 +227,7 @@ class XORTask(EvaluationTask):
         :rtype: list
         :return: A sequence of 0s and 1s
         """
-        return [random.randint(0, 1) for _ in xrange(self.str_length)]
+        return [random.randint(0, 1) for _ in range(self.str_length)]
 
     def eval_func(self, s):
         return reduce(operator.xor, s, 0)
@@ -253,12 +254,12 @@ class DelayedXORTask(XORTask):
         :return: A Variable containing the input values and a Variable
             containing the output values
         """
-        x_raw = [self.sample_str() for _ in xrange(num_tensors)]
-        y_raw = [[self.eval_func(s[:j]) for j in xrange(len(s))]
+        x_raw = [self.sample_str() for _ in range(num_tensors)]
+        y_raw = [[self.eval_func(s[:j]) for j in range(len(s))]
                  for s in x_raw]
 
-        x_sent = [[unicode(w) for w in s] for s in x_raw]
-        y_sent = [[unicode(w) for w in s] for s in y_raw]
+        x_sent = [[str(w) for w in s] for s in x_raw]
+        y_sent = [[str(w) for w in s] for s in y_raw]
 
         x_var = self.sentences_to_one_hot(self.max_length, *x_sent)
         y_var = self.sentences_to_codes(self.max_length, *y_sent)

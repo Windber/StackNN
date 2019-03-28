@@ -1,5 +1,5 @@
-from __future__ import division
-from __future__ import print_function
+
+
 
 from abc import ABCMeta, abstractmethod
 import matplotlib.pyplot as plt
@@ -10,10 +10,8 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 
-class Visualizer(object):
+class Visualizer(object, metaclass=ABCMeta):
     """Abstract class for a visualizer."""
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, task):
         self._task = task
@@ -40,12 +38,12 @@ class LSTMVisualizer(Visualizer):
 
         model._controller.start_log(num_steps)
         cell_states = []
-        for j in xrange(num_steps):
+        for j in range(num_steps):
             model.forward()
             cell_states.append(model._controller._cell_state.data)
         model._controller.stop_log()
 
-        cell_seqs = zip(*[state.tolist() for state in cell_states])
+        cell_seqs = list(zip(*[state.tolist() for state in cell_states]))
         for cell_seq in cell_seqs:
             full_cell_seq = [[0.]]
             full_cell_seq.extend(cell_seq)

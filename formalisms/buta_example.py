@@ -4,8 +4,8 @@ create bottom-up tree automata.
 """
 from nltk.grammar import Nonterminal
 
-from tree_automata import BUTA
-from trees import Tree, reverse_polish
+from .tree_automata import BUTA
+from .trees import Tree, reverse_polish
 
 # Create a tree automaton recognizing true boolean expressions
 a = BUTA.fromstring("""
@@ -21,28 +21,28 @@ a = BUTA.fromstring("""
     F -> 'and' F T
     F -> 'and' F F
     F -> 'or' F F
-""", u'T')
+""", 'T')
 
 # Create some boolean expressions
-t1 = Tree(u"or", [u"1", u"0"])  # true
-t2 = Tree(u"not", [t1])  # false
-t3 = Tree(u"and", [u"1", u"1"])  # true
-t4 = Tree(u"or", [t3, u"0"])  # true
-t5 = Tree(u"and", [t2, t4])  # false
-t6 = Tree(u"not", [t5])  # true
+t1 = Tree("or", ["1", "0"])  # true
+t2 = Tree("not", [t1])  # false
+t3 = Tree("and", ["1", "1"])  # true
+t4 = Tree("or", [t3, "0"])  # true
+t5 = Tree("and", [t2, t4])  # false
+t6 = Tree("not", [t5])  # true
 
 # Use the BUTA to evaluate some expressions
-print "{} is {}".format(t5, a.recognize(t5))
-print "{} is {}".format(t6, a.recognize(t6))
+print("{} is {}".format(t5, a.recognize(t5)))
+print("{} is {}".format(t6, a.recognize(t6)))
 
 # Use the BUTA to parse an expression
-print "Parse:"
-print " ".join(reverse_polish(t6))
+print("Parse:")
+print(" ".join(reverse_polish(t6)))
 for p in a.parse(t6):
-    print " ".join([str(l) for l in reverse_polish(p)])
+    print(" ".join([str(l) for l in reverse_polish(p)]))
 
 # Use the BUTA to generate some expressions
-qt = Nonterminal(u"T")
-qf = Nonterminal(u"F")
+qt = Nonterminal("T")
+qf = Nonterminal("F")
 for e in a.generate(states={qt, qf}, depth=4, n=10):
-    print "{} is {}".format(str(e), a.recognize(e))
+    print("{} is {}".format(str(e), a.recognize(e)))

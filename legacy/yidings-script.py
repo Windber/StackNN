@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 from models import VanillaModel, BufferedModel
 from controllers import *
@@ -27,7 +27,7 @@ task = DelayedXORTask(**configs)
 
 trace_X, _ = task.get_tensors(1)
 sentence = task.one_hot_to_sentences(trace_X.size(1),trace_X)
-print task.sentences_to_text(*sentence)
+print(task.sentences_to_text(*sentence))
 
 if isinstance(task.model, buffered):
     task.model.trace(trace_X, 30)

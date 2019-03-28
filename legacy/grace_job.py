@@ -43,12 +43,12 @@ configs = [
     # ("delayed_parity", final_delayed_parity_config),
     # ("dyck", final_dyck_config),
     ("agreement", final_agreement_config),
-<<<<<<< HEAD
+    # <<<<<<< HEAD
     # ("formula", final_formula_config)
-=======
+    # =======
     ("agreement10", final_agreement_config_10),
     ("formula", final_formula_config)
->>>>>>> 280c714949b6d67d317b456b3ffeb1bc1830fb48
+    # >>>>>>> 280c714949b6d67d317b456b3ffeb1bc1830fb48
 ]
 
 # Vanilla vs. Buffered Model

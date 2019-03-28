@@ -1,7 +1,7 @@
-from __future__ import print_function
+
 import sys
 import traceback
-import StringIO
+import io
 import torch
 from torch.autograd import Variable
 
@@ -38,7 +38,7 @@ class testcase(object):
                 if i > -1: test_msg += "#{}".format(i)
                 test_msg += ".."
                 print(test_msg)
-                stdout = StringIO.StringIO()
+                stdout = io.StringIO()
                 old_stdout = sys.stdout
                 sys.stdout = stdout
                 test(*args)
@@ -87,7 +87,7 @@ def test_module(module):
         d = module.__dict__
     else:
         raise ValueError("{} is not a class, module, or dictionary".format(module))
-    for obj in d.values():
+    for obj in list(d.values()):
         if getattr(obj, "_is_test_case", False):
             obj()
 

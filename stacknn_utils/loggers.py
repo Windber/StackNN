@@ -1,5 +1,5 @@
 import sys
-from StringIO import StringIO
+from io import StringIO
 
 
 class FileLogger(object):

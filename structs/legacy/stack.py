@@ -48,7 +48,7 @@ class Stack(nn.Module):
 		old_t = self.s.data.shape[0] if self.s.data.shape else 0
 		s = Variable(torch.FloatTensor(old_t + 1, self.batch_size))
 		w = u
-		for i in reversed(xrange(old_t)):
+		for i in reversed(range(old_t)):
 			s_ = F.relu(self.s[i,:] - w)
 			w = F.relu(w - self.s[i,:])
 			s[i,:] = s_
@@ -59,7 +59,7 @@ class Stack(nn.Module):
 
 			# calculate r, which is of size [batch_size, embedding_size]
 			r = Variable(torch.zeros([self.batch_size, self.embedding_size]))
-			for i in reversed(xrange(old_t + 1)):
+			for i in reversed(range(old_t + 1)):
 				used = torch.sum(self.s[i + 1:old_t + 1,:], 0) if i < old_t else self.zero
 				coeffs = torch.min(self.s[i,:], F.relu(1 - used))
 				# reformating coeffs into a matrix that can be multiplied element-wise
@@ -71,12 +71,12 @@ class Stack(nn.Module):
 			# TODO can probably make this more efficient
 
 			r = Variable(torch.zeros([self.batch_size, self.k, self.embedding_size]))
-			for k in xrange(self.k):
-				for i in reversed(xrange(old_t + 1)):
+			for k in range(self.k):
+				for i in reversed(range(old_t + 1)):
 					used = torch.sum(self.s[i + 1:old_t + 1,:], 0) if i < old_t else self.zero
 					coeffs = torch.min(self.s[i,:], F.relu(1 + k - used))
 					r[:,k,:] = r[:,k,:] + coeffs.view(self.batch_size, 1).repeat(1, self.embedding_size) * self.V[i,:,:]
-			for k in reversed(xrange(1, self.k)):
+			for k in reversed(range(1, self.k)):
 				r[:,k,:] = r[:,k,:] - r[:,k - 1,:]
 			return r
 
@@ -86,16 +86,16 @@ class Stack(nn.Module):
 		"""
 		V = self.V.data
 		if not V.shape:
-			print "[Empty stack]"
+			print("[Empty stack]")
 			return
-		for b in xrange(self.batch_size):
+		for b in range(self.batch_size):
 			if b > 0:
-				print "----------------------------"
-			for i in xrange(V.shape[0]):
-				print "{}\t|\t{:.2f}".format("\t".join("{:.2f}".format(x) for x in V[i, b,:]), self.s[i, b].data[0])
+				print("----------------------------")
+			for i in range(V.shape[0]):
+				print("{}\t|\t{:.2f}".format("\t".join("{:.2f}".format(x) for x in V[i, b,:]), self.s[i, b].data[0]))
 
 if __name__ == "__main__":
-	print "Simulating example stack.."
+	print("Simulating example stack..")
 	stack = Stack(1, 1)
 	stack.log()
 	out = stack.forward(
@@ -103,22 +103,22 @@ if __name__ == "__main__":
 		Variable(torch.FloatTensor([[0]])),
 		Variable(torch.FloatTensor([[.8]])),
 	)
-	print "\n\n"
+	print("\n\n")
 	stack.log()
-	print "read", out
+	print("read", out)
 	out = stack.forward(
 		Variable(torch.FloatTensor([[2]])),
 		Variable(torch.FloatTensor([[.1]])),
 		Variable(torch.FloatTensor([[.5]])),
 	)
-	print "\n\n"
+	print("\n\n")
 	stack.log()
-	print "read", out
+	print("read", out)
 	out = stack.forward(
 		Variable(torch.FloatTensor([[3]])),
 		Variable(torch.FloatTensor([[.9]])),
 		Variable(torch.FloatTensor([[.9]])),
 	)
-	print "\n\n"
+	print("\n\n")
 	stack.log()
-	print "read", out
+	print("read", out)

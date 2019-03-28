@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import random
 
@@ -37,11 +37,11 @@ criterion = nn.CrossEntropyLoss()
 def randstr():
     length = min(max(MIN_LENGTH, int(random.gauss(MEAN_LENGTH, STD_LENGTH))),
                  MAX_LENGTH)
-    return [random.randint(0, 1) for _ in xrange(length)]
+    return [random.randint(0, 1) for _ in range(length)]
 
 
 reverse = lambda s: s[::-1]
-onehot = lambda b: torch.FloatTensor([1. if i == b else 0. for i in xrange(3)])
+onehot = lambda b: torch.FloatTensor([1. if i == b else 0. for i in range(3)])
 
 
 # def get_tensors(B):
@@ -65,7 +65,7 @@ onehot = lambda b: torch.FloatTensor([1. if i == b else 0. for i in xrange(3)])
 
 
 def get_tensors(B):
-    X_raw = [randstr() for _ in xrange(B)]
+    X_raw = [randstr() for _ in range(B)]
 
     # initialize X to one-hot encodings of NULL
     X = torch.FloatTensor(B, 2 * MAX_LENGTH, 3)
@@ -94,7 +94,7 @@ def train(train_X, train_Y):
     total_loss = 0.
 
     for batch, i in enumerate(
-            xrange(0, len(train_X.data) - BATCH_SIZE + 1, BATCH_SIZE)):
+            range(0, len(train_X.data) - BATCH_SIZE + 1, BATCH_SIZE)):
 
         digits_correct = 0
         digits_total = 0
@@ -106,9 +106,9 @@ def train(train_X, train_Y):
         zero = Variable(torch.zeros(BATCH_SIZE, 3))
         num_iterations = TIME_FN(2 * MAX_LENGTH)
         model.init_model(BATCH_SIZE, X)
-        for j in xrange(num_iterations):
+        for j in range(num_iterations):
             model.forward()
-        for j in xrange(MAX_LENGTH):
+        for j in range(MAX_LENGTH):
             model._buffer_out.pop(1.)
             a = model._buffer_out.read(1.)
 
@@ -139,11 +139,11 @@ def train(train_X, train_Y):
         total_loss += batch_loss.data
         if batch % 10 == 9:
             mean_loss = sum(batch_loss.data)
-            print "batches {}-{}: loss={:.4f}, acc={:.2f}".format(batch - 9,
+            print("batches {}-{}: loss={:.4f}, acc={:.2f}".format(batch - 9,
                                                                   batch,
                                                                   mean_loss,
                                                                   digits_correct
-                                                                  / digits_total)
+                                                                  / digits_total))
 
 
 def evaluate(test_X, test_Y):
@@ -158,9 +158,9 @@ def evaluate(test_X, test_Y):
     zero = Variable(torch.zeros(len_X, 3))
     num_iterations = TIME_FN(2 * MAX_LENGTH)
     model.init_model(len_X, test_X)
-    for j in xrange(num_iterations):
+    for j in range(num_iterations):
         model.forward()
-    for j in xrange(MAX_LENGTH):
+    for j in range(MAX_LENGTH):
         model._buffer_out.pop(1.)
         a = model._buffer_out.read(1.)
 
@@ -181,20 +181,20 @@ def evaluate(test_X, test_Y):
         total_loss += criterion(valid_a, valid_Y)
 
     mean_loss = sum(total_loss.data)
-    print "epoch {}: loss={:.4f}, acc={:.2f}".format(epoch, mean_loss,
+    print("epoch {}: loss={:.4f}, acc={:.2f}".format(epoch, mean_loss,
                                                      digits_correct /
-                                                     digits_total)
+                                                     digits_total))
 
 
 optimizer = optim.Adam(model.parameters(),
                        lr=LEARNING_RATE,
                        weight_decay=LAMBDA,
                        )
-print "hyperparameters: lr={}, lambda={} batch_size={}, read_dim={}".format(
-    LEARNING_RATE, LAMBDA, BATCH_SIZE, READ_SIZE)
+print("hyperparameters: lr={}, lambda={} batch_size={}, read_dim={}".format(
+    LEARNING_RATE, LAMBDA, BATCH_SIZE, READ_SIZE))
 
-for epoch in xrange(EPOCHS):
-    print "-- starting epoch {} --".format(epoch)
+for epoch in range(EPOCHS):
+    print("-- starting epoch {} --".format(epoch))
     perm = torch.randperm(800)
     train_X, train_Y = train_X[perm], train_Y[perm]
     train(train_X, train_Y)

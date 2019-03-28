@@ -84,7 +84,7 @@ def main(config,
 
 if __name__ == "__main__":
     args = get_args()
-    print("Loading {}".format(args.config))
+    print(("Loading {}".format(args.config)))
     config = get_object_from_arg(args.config, dict)
     model_type = get_object_from_arg(args.model, Model)
     controller_type = get_object_from_arg(args.controller, SimpleStructController)

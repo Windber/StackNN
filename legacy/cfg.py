@@ -1,7 +1,7 @@
 """
     Code for building language models from (P)CFGs
 """
-from __future__ import division
+
 
 import torch
 import torch.nn as nn
@@ -12,7 +12,7 @@ from sklearn.utils import shuffle
 from nltk.parse.generate import generate
 from nltk import CFG, PCFG
 import random
-from itertools import izip
+
 
 from models.vanilla import VanillaModel
 
@@ -41,8 +41,8 @@ S -> S S [0.20]
 S -> '(' S ')' [0.20] | '(' ')' [0.20]
 S -> '[' S ']' [0.20] | '[' ']' [0.20]
 """)
-parentheses_code_for = {u'(': 0, u')': 1, u'[': 2, u']': 3, '#': 4}
-parentheses_predict = [u')', u']']
+parentheses_code_for = {'(': 0, ')': 1, '[': 2, ']': 3, '#': 4}
+parentheses_predict = [')', ']']
 parentheses_sample_depth = 5
 # depth = 5 yields 15,130 strings
 
@@ -53,8 +53,8 @@ S -> "a" S "a1" [0.48]
 S -> "b" S "b1" [0.48]
 S -> "c" [0.04]
 """)
-reverse_code_for = {u"a": 0, u"b": 1, u"a1": 2, u"b1": 3, u"c": 4, u"#": 5}
-reverse_predict = [u"a1", u"b1"]
+reverse_code_for = {"a": 0, "b": 1, "a1": 2, "b1": 3, "c": 4, "#": 5}
+reverse_predict = ["a1", "b1"]
 reverse_sample_depth = 12
 # depth = 12 yields 2047 strings
 
@@ -82,10 +82,10 @@ Relobj -> "Rel" NPplur "Auxplur" "Vtrans" [0.5]
 VP -> "Vintrans" [0.75]
 VP -> "Vtrans" NP [0.25]
 """)
-agreement_code_for = {u"Det": 0, u"Nsing": 1, u"Nplur": 2, u"Auxsing": 3,
-                      u"Auxplur": 4, u"Rel": 5, u"Prep": 6, u"Vintrans": 7,
-                      u"Vtrans": 8, u"#": 9}
-agreement_predict = [u"Auxsing", u"Auxplur"]
+agreement_code_for = {"Det": 0, "Nsing": 1, "Nplur": 2, "Auxsing": 3,
+                      "Auxplur": 4, "Rel": 5, "Prep": 6, "Vintrans": 7,
+                      "Vtrans": 8, "#": 9}
+agreement_predict = ["Auxsing", "Auxplur"]
 agreement_sample_depth = 8
 # depth 8 yields 1718 strings
 
@@ -99,12 +99,12 @@ sample_depth = agreement_sample_depth
 ############################################
 
 # report symbols to predict and sample_depth
-print "to_predict = {}".format(to_predict)
-print "sample_depth = {}".format(sample_depth)
+print("to_predict = {}".format(to_predict))
+print("sample_depth = {}".format(sample_depth))
 
 # need onehot here to make a list of codes to predict
 onehot = lambda b: torch.FloatTensor(
-    [1. if i == b else 0. for i in xrange(len(code_for))])
+    [1. if i == b else 0. for i in range(len(code_for))])
 
 # list of codes of symbols to predict
 to_predict_codes = [onehot(code_for[s]) for s in to_predict]
@@ -112,7 +112,7 @@ to_predict_codes = [onehot(code_for[s]) for s in to_predict]
 
 # function to test if a symbol code is in list to predict
 def in_predict_codes(code):
-    for i in xrange(len(to_predict_codes)):
+    for i in range(len(to_predict_codes)):
         if ((code == to_predict_codes[i]).all()):
             return True
     return False
@@ -122,13 +122,13 @@ def in_predict_codes(code):
 sample_strings = list(generate(grammar, depth=sample_depth))
 
 # report #, min length and max length for strings in sample_strings
-print("number of sample strings = {}".format(len(sample_strings)))
+print(("number of sample strings = {}".format(len(sample_strings))))
 sample_lengths = [len(s) for s in sample_strings]
-print("min length = {}, max length = {}".format(min(sample_lengths),
-                                                max(sample_lengths)))
+print(("min length = {}, max length = {}".format(min(sample_lengths),
+                                                max(sample_lengths))))
 
 # sanity check: report one random string from sample_strings
-print "random sample string = {}".format(random.choice(sample_strings))
+print("random sample string = {}".format(random.choice(sample_strings)))
 
 #################################
 
@@ -177,7 +177,7 @@ def randstr():
 
 # currently uses sample_randstr()
 def get_tensors(B):
-    X_raw = [sample_randstr() for _ in xrange(B)]
+    X_raw = [sample_randstr() for _ in range(B)]
 
     # initialize X to one-hot encodings of NULL
     X = torch.FloatTensor(B, MAX_LENGTH, len(code_for))
@@ -205,7 +205,7 @@ def train(train_X):
     # avged per mini-batch
 
     for batch, i in enumerate(
-            xrange(0, len(train_X.data) - BATCH_SIZE, BATCH_SIZE)):
+            range(0, len(train_X.data) - BATCH_SIZE, BATCH_SIZE)):
 
         batch_loss = 0.
 
@@ -217,8 +217,8 @@ def train(train_X):
         ############################################
         # this set valid_X to 0 for any symbol not in list to predict
 
-        for k in xrange(BATCH_SIZE):
-            for j in xrange(MAX_LENGTH):
+        for k in range(BATCH_SIZE):
+            for j in range(MAX_LENGTH):
                 if (not (in_predict_codes(X[k, j, :].data))):
                     valid_X[k, j] = 0
 
@@ -226,7 +226,7 @@ def train(train_X):
                     #        print "valid_X[0] = {}".format(valid_X[0])
                     ############################################
 
-        for j in xrange(1, MAX_LENGTH):
+        for j in range(1, MAX_LENGTH):
             a = model.forward(X[:, j - 1, :])
             _, y = torch.max(X[:, j, :], 1)
             _, y_pred = torch.max(a, 1)
@@ -243,8 +243,8 @@ def train(train_X):
 
         total_loss += batch_loss.data
         if batch % 10 == 0:
-            print "batch {}: loss={:.4f}, acc={:.2f}".format(batch, sum(
-                batch_loss.data), num_correct / num_total)
+            print("batch {}: loss={:.4f}, acc={:.2f}".format(batch, sum(
+                batch_loss.data), num_correct / num_total))
 
 
 def evaluate(test_X):
@@ -258,15 +258,15 @@ def evaluate(test_X):
     valid_X = (test_X[:, :, len(code_for) - 1] != 1).type(torch.FloatTensor)
 
     ######################################
-    for k in xrange(len(test_X.data)):
-        for j in xrange(MAX_LENGTH):
+    for k in range(len(test_X.data)):
+        for j in range(MAX_LENGTH):
             if (not in_predict_codes(test_X[k, j, :].data)):
                 valid_X[k, j] = 0
                 ######################################
 
     y_prev = None
 
-    for j in xrange(1, MAX_LENGTH):
+    for j in range(1, MAX_LENGTH):
         a = model.forward(test_X[:, j - 1, :])
         _, y = torch.max(test_X[:, j, :], 1)
         _, y_pred = torch.max(a, 1)
@@ -280,17 +280,17 @@ def evaluate(test_X):
         y_prev = y[0]
 
     # print model.state_dict()
-    print "epoch {}: loss={:.4f}, acc={:.2f}".format(epoch,
+    print("epoch {}: loss={:.4f}, acc={:.2f}".format(epoch,
                                                      sum(total_loss.data),
-                                                     num_correct / num_total)
+                                                     num_correct / num_total))
 
 
 # optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-print "hyperparameters: lr={}, batch_size={}, read_dim={}".format(
-    LEARNING_RATE, BATCH_SIZE, READ_SIZE)
-for epoch in xrange(EPOCHS):
-    print "-- starting epoch {} --".format(epoch)
+print("hyperparameters: lr={}, batch_size={}, read_dim={}".format(
+    LEARNING_RATE, BATCH_SIZE, READ_SIZE))
+for epoch in range(EPOCHS):
+    print("-- starting epoch {} --".format(epoch))
     perm = torch.randperm(800)
     train_X = train_X[perm]
     train(train_X)

@@ -1,10 +1,10 @@
-from __future__ import division
-from __future__ import print_function
+
+
 
 import torch
 from torch.autograd import Variable
 
-from base import Model
+from .base import Model
 from controllers.feedforward import LinearSimpleStructController
 from stacknn_utils.errors import unused_init_param
 from structs.simple import Stack
@@ -164,20 +164,20 @@ class VanillaModel(Model):
         max_length = trace_x.data.shape[1]
 
         self._controller.start_log(max_length)
-        for j in xrange(max_length):
+        for j in range(max_length):
             self.forward()
         self._controller.stop_log()
 
-        x_labels = ["x_" + str(i) for i in xrange(self._input_size)]
-        y_labels = ["y_" + str(i) for i in xrange(self._output_size)]
+        x_labels = ["x_" + str(i) for i in range(self._input_size)]
+        y_labels = ["y_" + str(i) for i in range(self._output_size)]
         i_labels = ["Pop", "Push"]
-        v_labels = ["v_" + str(i) for i in xrange(self._read_size)]
+        v_labels = ["v_" + str(i) for i in range(self._read_size)]
         labels = x_labels + y_labels + i_labels + v_labels
 
         import matplotlib.pyplot as plt
         plt.imshow(self._controller.log_data, cmap="hot", interpolation="nearest")
         plt.title("Trace")
-        plt.yticks(range(len(labels)), labels)
+        plt.yticks(list(range(len(labels))), labels)
         plt.xlabel("Time")
         plt.ylabel("Value")
         plt.show()
@@ -216,7 +216,7 @@ class VanillaModel(Model):
 
         max_length = trace_x.data.shape[1]
         self._controller.start_log(max_length)
-        for j in xrange(max_length):
+        for j in range(max_length):
             print("\n-- Step {} of {} --".format(j, max_length))
 
             self()
@@ -241,5 +241,5 @@ class VanillaModel(Model):
             self._struct.print_summary(0)
 
             if step:
-                raw_input("\nPress Enter to continue\n")
+                input("\nPress Enter to continue\n")
         self._controller.stop_log()

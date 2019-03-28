@@ -1,13 +1,13 @@
 """
 Recurrent controllers for use in Models.
 """
-from __future__ import division
+
 
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-from base import SimpleStructController
+from .base import SimpleStructController
 from stacknn_utils.errors import unused_init_param
 
 
@@ -54,7 +54,7 @@ class RNNSimpleStructController(SimpleStructController):
                                                      output_size,
                                                      n_args=n_args)
 
-        for param_name, arg_value in kwargs.iteritems():
+        for param_name, arg_value in kwargs.items():
             unused_init_param(param_name, arg_value, self)
 
         self._hidden = None
@@ -123,7 +123,7 @@ class RNNSimpleStructController(SimpleStructController):
         read_params = torch.sigmoid(nn_output[:, :self._n_args + self._read_size])
         v = read_params[:, self._n_args:].contiguous()
         instructions = tuple(read_params[:, j].contiguous()
-                             for j in xrange(self._n_args))
+                             for j in range(self._n_args))
 
         self._log(x, torch.sigmoid(output), v, *instructions)
 
@@ -175,7 +175,7 @@ class LSTMSimpleStructController(SimpleStructController):
                                                       output_size,
                                                       n_args=n_args)
 
-        for param_name, arg_value in kwargs.iteritems():
+        for param_name, arg_value in kwargs.items():
             unused_init_param(param_name, arg_value, self)
 
         self._hidden = None
@@ -246,7 +246,7 @@ class LSTMSimpleStructController(SimpleStructController):
         read_params = torch.sigmoid(nn_output[:, :self._n_args + self._read_size])
         v = read_params[:, self._n_args:].contiguous()
         instructions = tuple(read_params[:, j].contiguous()
-                             for j in xrange(self._n_args))
+                             for j in range(self._n_args))
 
         self._log(x, torch.sigmoid(output), v, *instructions)
 
@@ -296,7 +296,7 @@ class GRUSimpleStructController(SimpleStructController):
                                                      output_size,
                                                      n_args=n_args)
 
-        for param_name, arg_value in kwargs.iteritems():
+        for param_name, arg_value in kwargs.items():
             unused_init_param(param_name, arg_value, self)
 
         self._hidden = None
@@ -364,7 +364,7 @@ class GRUSimpleStructController(SimpleStructController):
         read_params = torch.sigmoid(nn_output[:, :self._n_args + self._read_size])
         v = read_params[:, self._n_args:].contiguous()
         instructions = tuple(read_params[:, j].contiguous()
-                             for j in xrange(self._n_args))
+                             for j in range(self._n_args))
 
         self._log(x, torch.sigmoid(output), v, *instructions)
 

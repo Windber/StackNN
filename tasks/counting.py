@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 from copy import copy
 import random
@@ -38,11 +38,11 @@ class OrderedCountingTask(LanguageModelingTask):
             self.max_n = kwargs.get("max_n", 100)
             self.evaluate_all = kwargs.get("evaluate_all", False)
             max_length = self._get_length(self.max_n)
-            to_predict = [u"#"]
+            to_predict = ["#"]
             if self.evaluate_all:
-                to_predict.extend(self._get_char(i) for i in xrange(max_length))
+                to_predict.extend(self._get_char(i) for i in range(max_length))
             super(OrderedCountingTask.Params, self).__init__(to_predict,
-                                                             null=u"#",
+                                                             null="#",
                                                              mask_null=False,
                                                              max_length=max_length,
                                                              **kwargs)
@@ -53,7 +53,7 @@ class OrderedCountingTask(LanguageModelingTask):
             Get the character to represent symbol i. For example, this
             function maps 0 to u"a".
             """
-            return unicode(chr(97 + i))
+            return str(chr(97 + i))
 
         def _get_length(self, n):
             """Returns the length of the string parameterized by n."""
@@ -71,8 +71,8 @@ class OrderedCountingTask(LanguageModelingTask):
 
     def _init_alphabet(self, null):
         x_length = len(self.length_fns)
-        alphabet = {self._get_char(i): i for i in xrange(x_length)}
-        alphabet[u"#"] = x_length
+        alphabet = {self._get_char(i): i for i in range(x_length)}
+        alphabet["#"] = x_length
         return alphabet
 
     """ Data Generation """
@@ -105,7 +105,7 @@ class OrderedCountingTask(LanguageModelingTask):
         Generate a dataset including all strings in the language with
             self.min_n <= n <= self.max_n.
         """
-        valid_n_range = lambda: xrange(self.min_n, self.max_n)
+        valid_n_range = lambda: range(self.min_n, self.max_n)
         x_strings = [self._get_x_string(n) for n in valid_n_range()]
         y_strings = [self._get_y_string(x_string) for x_string in x_strings]
         
@@ -118,7 +118,7 @@ class OrderedCountingTask(LanguageModelingTask):
         x_string = []
         for i, length_fn in enumerate(self.length_fns):
             length = length_fn(n)
-            x_string.extend(self._get_char(i) for _ in xrange(length))
+            x_string.extend(self._get_char(i) for _ in range(length))
         return x_string
 
     def _get_y_string(self, x_string):

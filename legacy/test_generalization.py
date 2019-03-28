@@ -45,7 +45,7 @@ config_dicts = {
 
 
 def parse_folder_name(fn):
-    print fn
+    print(fn)
     components = fn.split("-")
 
     return (components[0],
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     folders = next(os.walk("stacknn-experiments"))[1]
     logger = Logger()
 
-    print "Begin testing"
+    print("Begin testing")
     start_time = time.time()
 
     for folder in folders:
@@ -74,11 +74,11 @@ if __name__ == "__main__":
         testing_data = "data/testing/final/" + task_name + ".csv"
         task_configs = config_dicts[task_name]
 
-        print "Conditions:" + ",".join(conditions)
+        print("Conditions:" + ",".join(conditions))
 
-        for i in xrange(10):
+        for i in range(10):
             trial_start_time = time.time()
-            print "Trial {}".format(i)
+            print("Trial {}".format(i))
             filename = "stacknn-experiments/" + folder + "/" + str(i) + ".dat"
             if os.path.exists(filename) and os.path.isfile(filename):
                 task_type = task_configs["task"]
@@ -96,16 +96,16 @@ if __name__ == "__main__":
                 task.run_test(testing_data, log_file=log_filename)
 
             end_time = time.time()
-            print "Trial time: {:.3f} seconds".format(end_time -
-                                                      trial_start_time)
+            print("Trial time: {:.3f} seconds".format(end_time -
+                                                      trial_start_time))
 
         end_time = time.time()
-        print "Condition time: {:.3f} seconds".format(end_time -
-                                                      folder_start_time)
+        print("Condition time: {:.3f} seconds".format(end_time -
+                                                      folder_start_time))
 
-    print "Testing complete!"
+    print("Testing complete!")
     end_time = time.time()
-    print "Time elapsed: {:.3f} seconds".format(end_time - start_time)
+    print("Time elapsed: {:.3f} seconds".format(end_time - start_time))
 
     # Parse the logs
     string_io = logger.logger
@@ -126,7 +126,7 @@ if __name__ == "__main__":
             # Start a new row
             results.append(curr_condition + curr_trials)
             curr_condition = re.sub(r"^Conditions:", "", line).split(",")
-            curr_trials = ["" for _ in xrange(10)]
+            curr_trials = ["" for _ in range(10)]
         elif re.match(trial_re, line):
             # Update current trial number
             curr_trial = int(line[-1])
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     f = open("stacknn-experiments/generalization_results.csv", "w")
 
     f.write("Task,Model,Controller,Struct,")
-    f.write(",".join(["Trial " + str(i) for i in xrange(10)]))
+    f.write(",".join(["Trial " + str(i) for i in range(10)]))
     f.write("\n")
 
     for r in results:

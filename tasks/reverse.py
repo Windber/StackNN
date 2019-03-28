@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import random
 
@@ -29,7 +29,7 @@ class ReverseTask(FormalTask):
             super(ReverseTask.Params, self).__init__(**kwargs)
 
             # Override parameters from more abstract tasks.
-            self.null = unicode(self.num_symbols)
+            self.null = str(self.num_symbols)
             self.max_x_length = self.max_length * 2
             self.max_y_length = self.max_length * 8
 
@@ -43,7 +43,7 @@ class ReverseTask(FormalTask):
         return self.alphabet_size
 
     def _init_alphabet(self, null):
-        return {unicode(i): i for i in xrange(self.num_symbols + 1)}
+        return {str(i): i for i in range(self.num_symbols + 1)}
 
     """ Model Training """
 
@@ -121,8 +121,8 @@ class ReverseTask(FormalTask):
         """
         length = int(random.gauss(self.mean_length, self.std_length))
         length = min(max(self.min_length, length), self.max_length)
-        s = [random.randint(0, self.num_symbols - 1) for _ in xrange(length)]
-        return [unicode(w) for w in s]
+        s = [random.randint(0, self.num_symbols - 1) for _ in range(length)]
+        return [str(w) for w in s]
 
     def get_tensors(self, num_tensors):
         """
@@ -144,8 +144,8 @@ class ReverseTask(FormalTask):
         :return: A Variable containing the input values and a Variable
             containing the output values
         """
-        x_raw = [self.randstr() for _ in xrange(num_tensors)]
-        y_raw = [[self.null for _ in xrange(len(s))] + s[::-1] for s in x_raw]
+        x_raw = [self.randstr() for _ in range(num_tensors)]
+        y_raw = [[self.null for _ in range(len(s))] + s[::-1] for s in x_raw]
 
         x_var = self.sentences_to_one_hot(self.max_x_length, *x_raw)
         y_var = self.sentences_to_codes(self.max_y_length, *y_raw)
@@ -155,7 +155,7 @@ class ReverseTask(FormalTask):
     @property
     def generic_example(self):
         """The string for visualizations."""
-        return [u'1', u'1', u'1', u'2', u'1', u'1', u'2', u'1', u'1', u'2', u'1', u'2', u'2', u'1', u'2', u'2', u'2', u'2', u'2', u'1', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'0']
+        return ['1', '1', '1', '2', '1', '1', '2', '1', '1', '2', '1', '2', '2', '1', '2', '2', '2', '2', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
 
 
 class CopyTask(ReverseTask):
@@ -175,7 +175,7 @@ class CopyTask(ReverseTask):
         :return: A Variable containing the input values and a Variable
             containing the output values
         """
-        x_raw = [self.randstr() for _ in xrange(num_tensors)]
+        x_raw = [self.randstr() for _ in range(num_tensors)]
 
         x_var = self.sentences_to_one_hot(2 * self.max_length, *x_raw)
         y_var = self.sentences_to_codes(2 * self.max_length, *x_raw)
@@ -202,8 +202,8 @@ class ReverseDeletionTask(ReverseTask):
         :return: A Variable containing the input values and a Variable
             containing the output values
         """
-        x_raw = [self.randstr() for _ in xrange(num_tensors)]
-        y_raw = [[self.null for _ in xrange(len(s))] + self.reverse_with_delete(s) for s in x_raw]
+        x_raw = [self.randstr() for _ in range(num_tensors)]
+        y_raw = [[self.null for _ in range(len(s))] + self.reverse_with_delete(s) for s in x_raw]
 
         x_var = self.sentences_to_one_hot(self.max_x_length, *x_raw)
         y_var = self.sentences_to_codes(self.max_y_length, *y_raw)

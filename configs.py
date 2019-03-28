@@ -24,7 +24,8 @@ final_reverse_config = {
     "task": ReverseTask,
     "epochs": 100,
     "early_stopping_steps": 5,
-    "read_size": 2
+    "read_size": 2,
+    "cuda": False,
 }
 
 # 2) XOR/parity evaluation task.
@@ -49,7 +50,7 @@ final_dyck_config = {
     "epochs": 100,
     "early_stopping_steps": 5,
     "grammar": dyck_grammar_2,
-    "to_predict": [u")", u"]"],
+    "to_predict": [")", "]"],
     "sample_depth": 6,
     "max_length": 20,
     "read_size": 2,
@@ -67,7 +68,7 @@ final_agreement_config = {
     "epochs": 100,
     "early_stopping_steps": 5,
     "grammar": unambig_agreement_grammar,
-    "to_predict": [u"Auxsing", u"Auxplur"],
+    "to_predict": ["Auxsing", "Auxplur"],
     "sample_depth": 16,
     "read_size": 2,
     "criterion": CrossEntropyLoss(reduction="none")
@@ -79,7 +80,7 @@ final_agreement_config_10 = {
     "epochs": 100,
     "early_stopping_steps": 10,
     "grammar": unambig_agreement_grammar,
-    "to_predict": [u"Auxsing", u"Auxplur"],
+    "to_predict": ["Auxsing", "Auxplur"],
     "sample_depth": 16,
     "read_size": 2,
     "criterion": CrossEntropyLoss(reduction="none")
@@ -91,7 +92,7 @@ final_formula_config = {
     "epochs": 100,
     "early_stopping_steps": 5,
     "grammar": exp_eval_grammar,
-    "to_predict": [u"0", u"1"],
+    "to_predict": ["0", "1"],
     "sample_depth": 6,
     "read_size": 2,
     "max_length": 32,
@@ -145,7 +146,7 @@ testing_dyck_config = {
     "epochs": 1,
     "early_stopping_steps": 5,
     "grammar": dyck_grammar_2,
-    "to_predict": [u")", u"]"],
+    "to_predict": [")", "]"],
     "sample_depth": 5,
     "read_size": 2,
     "max_length": 128,
@@ -157,7 +158,7 @@ testing_agreement_config = {
     "epochs": 1,
     "early_stopping_steps": 5,
     "grammar": unambig_agreement_grammar,
-    "to_predict": [u"Auxsing", u"Auxplur"],
+    "to_predict": ["Auxsing", "Auxplur"],
     "sample_depth": 5,
     "read_size": 2,
     "max_length": 64,
@@ -169,7 +170,7 @@ testing_agreement_config_10 = {
     "epochs": 1,
     "early_stopping_steps": 10,
     "grammar": unambig_agreement_grammar,
-    "to_predict": [u"Auxsing", u"Auxplur"],
+    "to_predict": ["Auxsing", "Auxplur"],
     "sample_depth": 5,
     "read_size": 2,
     "max_length": 64,
@@ -181,7 +182,7 @@ testing_formula_config = {
     "epochs": 1,
     "early_stopping_steps": 5,
     "grammar": exp_eval_grammar,
-    "to_predict": [u"0", u"1"],
+    "to_predict": ["0", "1"],
     "sample_depth": 5,
     "read_size": 2,
     "max_length": 48,
@@ -207,7 +208,7 @@ old_final_dyck_config = {
     "epochs": 100,
     "early_stopping_steps": 5,
     "grammar": dyck_grammar,
-    "to_predict": [u")", u"]"],
+    "to_predict": [")", "]"],
     "sample_depth": 5,
     "read_size": 2
 }
@@ -216,7 +217,7 @@ old_final_dyck_config = {
 reverse_cfg = {
     "task": CFGTask,
     "grammar": reverse_grammar,
-    "to_predict": [u"a1", u"b1"],
+    "to_predict": ["a1", "b1"],
     "sample_depth": 12,
 }
 
@@ -224,7 +225,7 @@ reverse_cfg = {
 unambig_agreement_config = {
     "task": CFGTask,
     "grammar": unambig_agreement_grammar,
-    "to_predict": [u"Auxsing", u"Auxplur"],
+    "to_predict": ["Auxsing", "Auxplur"],
     "sample_depth": 16,
 }
 

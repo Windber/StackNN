@@ -18,14 +18,14 @@ def generate_data_set(task):
     combined = list(zip(x_text, y_text))
     combined = list(set(list(combined)))
     random.shuffle(combined)
-    x_text[:], y_text[:] = zip(*combined)
+    x_text[:], y_text[:] = list(zip(*combined))
 
     return x_text[:1000], y_text[:1000]
 
 
 def save_data_set(x_text, y_text, filename):
     f = open("data/testing/final/" + filename, "w")
-    for i in xrange(len(x_text)):
+    for i in range(len(x_text)):
         f.write(",".join([x_text[i], y_text[i]]) + "\n")
     f.close()
 
@@ -34,7 +34,7 @@ def save_data_set(x_text, y_text, filename):
 
 random.seed(8597)
 
-print "Generating testing data for Reverse..."
+print("Generating testing data for Reverse...")
 start_time = time.time()
 
 config = testing_reverse_config
@@ -44,13 +44,13 @@ xs, ys = generate_data_set(ReverseTask(**config))
 save_data_set(xs, ys, "reverse.csv")
 
 end_time = time.time()
-print "Time elapsed: {:.3f} seconds".format(end_time - start_time)
+print("Time elapsed: {:.3f} seconds".format(end_time - start_time))
 
 """ XOR Task """
 
 random.seed(8301)
 
-print "Generating testing data for XOR..."
+print("Generating testing data for XOR...")
 start_time = time.time()
 
 config = final_parity_config
@@ -61,13 +61,13 @@ xs, ys = generate_data_set(XORTask(**config))
 save_data_set(xs, ys, "parity.csv")
 
 end_time = time.time()
-print "Time elapsed: {:.3f} seconds".format(end_time - start_time)
+print("Time elapsed: {:.3f} seconds".format(end_time - start_time))
 
 """ Delayed XOR Task """
 
 random.seed(5212)
 
-print "Generating testing data for Delayed XOR..."
+print("Generating testing data for Delayed XOR...")
 start_time = time.time()
 
 config = final_delayed_parity_config
@@ -78,21 +78,21 @@ xs, ys = generate_data_set(DelayedXORTask(**config))
 save_data_set(xs, ys, "delayed_parity.csv")
 
 end_time = time.time()
-print "Time elapsed: {:.3f} seconds".format(end_time - start_time)
+print("Time elapsed: {:.3f} seconds".format(end_time - start_time))
 
 """ Formula Task """
 
 random.seed(4968)
 
-print "Generating testing data for Formula..."
+print("Generating testing data for Formula...")
 start_time = time.time()
 sentences = random_sentences(2000, 6, exp_eval_grammar)
 end_time = time.time()
 
-print "Sentence generation time: {:.3f} seconds".format(end_time - start_time)
+print("Sentence generation time: {:.3f} seconds".format(end_time - start_time))
 
 max_length = max([len(s) for s in sentences])
-print "Max length: {}".format(max_length)
+print("Max length: {}".format(max_length))
 
 sentences = list(set([tuple(s) for s in sentences]))[:1000]
 
@@ -104,4 +104,4 @@ ys = [" ".join(y) for y in y_raw]
 save_data_set(xs, ys, "formula.csv")
 
 end_time = time.time()
-print "Time elapsed: {:.3f} seconds".format(end_time - start_time)
+print("Time elapsed: {:.3f} seconds".format(end_time - start_time))

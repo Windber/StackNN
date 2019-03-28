@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 from abc import ABCMeta, abstractmethod
 
@@ -11,14 +11,13 @@ from torch.autograd import Variable
 from structs import Stack
 
 
-class Model(nn.Module):
+class Model(nn.Module, metaclass=ABCMeta):
     """
     Abstract class for creating policy controllers (models) that
     operate a neural data structure, such as a neural stack or a neural
     queue. To create a custom model, create a class inhereting from
     this one that overrides self.__init__ and self.forward.
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, read_size, struct_type=Stack, k=None):
         """
@@ -102,7 +101,7 @@ class Model(nn.Module):
         self.init_stack(1)
         max_length = trace_X.data.shape[1]
         data = np.zeros([2 + self.read_size, max_length])  # 2 + len(v)
-        for j in xrange(1, max_length):
+        for j in range(1, max_length):
             self.forward(trace_X[:, j - 1, :])
             data[0, j] = self.u.data.numpy()
             data[1, j] = self.d.data.numpy()
