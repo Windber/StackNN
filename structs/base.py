@@ -3,7 +3,36 @@ from abc import ABCMeta, abstractmethod
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+class PDAStruct(nn.Module, metaclass=ABCMeta):
+    def __init__(self, batch_size, embedding_size):
+        super(PDAStruct, self).__init__()
+        self.batch_size = batch_size
+        self.embedding_size = embedding_size
+        self._zeros = Variable(torch.zeros(batch_size))
 
+        self.contents = Variable(torch.FloatTensor(0))
+        self.strengths = Variable(torch.FloatTensor(0))
+    
+    def forward(self, u, d1, d2, v1, v2, r=None):
+        self.push(d1, d2, v1, v2)
+        self.read(u)
+        self.pop(u)
+
+    @abstractmethod
+    def pop(self, strength):
+        raise NotImplementedError("Missing implementation for pop")
+
+    @abstractmethod
+    def push(self, strength1, strength2, value1, value2):
+        raise NotImplementedError("Missing implementation for push")
+
+    @abstractmethod
+    def read(self, strength):
+        raise NotImplementedError("Missing implementation for read")
+
+    @property
+    def read_strength(self):
+        return 1.
 
 class Struct(nn.Module, metaclass=ABCMeta):
     """
