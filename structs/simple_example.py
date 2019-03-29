@@ -1,11 +1,16 @@
 """
+Because the problem on relative importing when launched as a individial script,
+For convinience please launch ../test_simple_example.py which wraps simple_example.py 
 Unit tests and usage examples for SimpleStructs.
+
 """
 import torch
 from torch.autograd import Variable
 
+
 from .simple import Stack, Queue, to_string
-from testing import testcase
+# comment out for not being used and nowhere to find testing module
+#from testing import testcase
 
 
 def test_push(s_struct, value, strength):
@@ -31,7 +36,7 @@ def test_read(s_struct, strength):
     s_str = to_string(strength)
 
     print("\nReading with strength {}".format(s_str))
-    print(to_string(s_struct.read(strength).data[0]))
+    print(to_string(s_struct.read(strength).data))
 
     return
 
@@ -47,11 +52,11 @@ else:
     struct = Queue(batch_size, embedding_size)
 
 # Push something
-v1 = Variable(torch.randn(embedding_size))
-v2 = Variable(torch.randn(embedding_size))
-v3 = Variable(torch.randn(embedding_size))
-v4 = Variable(torch.randn(embedding_size))
-s = Variable(torch.FloatTensor([1.]))
+v1 = Variable(torch.randn(batch_size, embedding_size))
+v2 = Variable(torch.randn(batch_size, embedding_size))
+v3 = Variable(torch.randn(batch_size, embedding_size))
+v4 = Variable(torch.randn(batch_size, embedding_size))
+s = Variable(torch.FloatTensor([[1.]]))
 
 test_push(struct, v1, s)
 test_push(struct, v2, s)

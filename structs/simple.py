@@ -20,8 +20,11 @@ def tensor_to_string(tensor):
     :rtype str
     :return: A string describing tensor
     """
-    return "\t".join("{:.4f} ".format(x) for x in tensor)
-
+    """
+    tensor format [batch_size, embedding_size]
+    """
+    #return "\t".join("{:.4f} ".format(x) for x in tensor)
+    return "\n".join("\t".join("{:.4f} ".format(x) for x in b) for b in tensor)
 
 def to_string(obj):
     """
@@ -298,7 +301,9 @@ class SimpleStruct(Struct, metaclass=ABCMeta):
         print("\t|\t\t\t|")
 
         for t in reversed(list(range(len(self)))):
-            v_str = to_string(self._values[t][batch, :])
+            #v_str = to_string(self._values[t][batch, :])
+            v_str = to_string(self._values[t])
+            #v_str = to_string(self._values[t][batch])
             s = self._strengths[t][batch].data.item()
             print(("{}\t|{:.4f}\t\t|{}".format(t, s, v_str)))
 
