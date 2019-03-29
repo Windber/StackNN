@@ -15,8 +15,9 @@ class PDAStruct(nn.Module, metaclass=ABCMeta):
     
     def forward(self, u, d1, d2, v1, v2, r=None):
         self.push(d1, d2, v1, v2)
-        self.read(u)
+        r = self.read(u)
         self.pop(u)
+        return r 
 
     @abstractmethod
     def pop(self, strength):
