@@ -163,6 +163,7 @@ class PDATask(Task, metaclass=ABCMeta):
         raise NotImplementedError("Missing implementation for _evaluate_step")
     def run_experiment(self):
         self._print_experiment_start()
+        # To do
         self.get_data()
         accuracy_best = 0
         for epoch in range(self.params.epochs):
