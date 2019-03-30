@@ -338,6 +338,7 @@ class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
         #self._read = Variable(torch.zeros([batch_size, self.embedding_size]))
         self._zeros = Variable(torch.zeros(batch_size))
         self.batch_size = batch_size
+        self._actual = torch.zeros(batch_size, 1)
     def __len__(self):
         return len(self._values)
 
@@ -357,6 +358,7 @@ class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
     
     def push(self, strength1, strength2, value1, value2):
         self._track_reg(strength1 + strength2, Operation.push)
+        self._actual += (strength1 + strength2)
 
         push_index = self._push_index()
         self._values.insert(push_index, value1)
@@ -374,6 +376,7 @@ class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
     
     def pop(self, u):
         self._track_reg(u, Operation.pop)
+        self._actual = torch.max(torch.zeros(self.batch_size, 1), self._actual - u)
         strengths_used = Variable(torch.zeros(self.batch_size, 1))
         for i in self._pop_indices():
             tmp = self._strengths[i]
@@ -422,6 +425,9 @@ class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
         for b in range(self.batch_size):
             print(("Batch {}:".format(b)))
             self.print_summary(b)
+    @property
+    def actual(self):
+        return self._actual
 class PDAStack(PDASimpleStruct):
     def _pop_indices(self):
         return top_to_bottom(len(self))

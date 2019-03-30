@@ -96,7 +96,7 @@ class Task(object, metaclass=ABCMeta):
             for key, value in self:
                 if type(value) == type:
                     value = value.__name__
-                print("%s: %s" % (key, value))
+                print(("%s: %s" % (key, value)))
 
         @property
         def test(self):
@@ -293,7 +293,7 @@ class Task(object, metaclass=ABCMeta):
         if not self.verbose:
             return
 
-        print("Starting {} Experiment".format(type(self).__name__))
+        print(("Starting {} Experiment".format(type(self).__name__)))
         self.model.print_experiment_start()
         self.params.print_experiment_start()
 
@@ -450,7 +450,7 @@ class Task(object, metaclass=ABCMeta):
         :return: None
         """
         if self.params.verbose:
-            print("\n-- Epoch {} of {} --\n".format(epoch, self.epochs - 1))
+            print(("\n-- Epoch {} of {} --\n".format(epoch, self.epochs - 1)))
 
     """ Testing Mode """
 
@@ -500,9 +500,9 @@ class Task(object, metaclass=ABCMeta):
         x_code = self.sentences_to_codes(self.max_y_length, *x_sent)
         num_steps = self.params.time_function(len(x_sent))
 
-        print("Begin computation on input", x)
+        print(("Begin computation on input", x))
         if step:
-            input("Press Enter to continue\n")
+            eval(input("Press Enter to continue\n"))
 
         self.model.trace_step(x_var, num_steps, step=step)
 
@@ -519,8 +519,8 @@ class Task(object, metaclass=ABCMeta):
         a_sent = self.codes_to_sentences(self.max_y_length, self._logged_a)
         a_text = self.sentences_to_text(*a_sent)[0]
 
-        print("Input:", x)
-        print("Output:", a_text)
+        print(("Input:", x))
+        print(("Output:", a_text))
 
     def trace_console(self, step=True):
         """
@@ -536,7 +536,7 @@ class Task(object, metaclass=ABCMeta):
         x = "x"
         while x != "":
             print()
-            x = input("Please enter an input, or enter nothing to quit.\n")
+            x = eval(input("Please enter an input, or enter nothing to quit.\n"))
             x = x.strip()
             if x != "":
                 self.trace_step(x, step=step)
@@ -606,7 +606,7 @@ class Task(object, metaclass=ABCMeta):
         :return: None
         """
         print("Starting Test")
-        print("Read Size:", str(self.params.read_size))
+        print(("Read Size:", str(self.params.read_size)))
 
     """ Reporting """
 
@@ -755,7 +755,7 @@ class FormalTask(Task):
     def _init_model(self):
         # We need to initialize the alphabet before constructing the model.
         self.alphabet = self._init_alphabet(self.null)
-        self.code_to_word = {c: w for w, c in self.alphabet.items()}
+        self.code_to_word = {c: w for w, c in list(self.alphabet.items())}
         return super(FormalTask, self)._init_model()
 
     @property

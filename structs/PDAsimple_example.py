@@ -46,7 +46,7 @@ def test_read(s_struct, strength):
     return
 
 
-test_stack = False  # Whether we are testing a Stack or a Queue
+test_stack = True  # Whether we are testing a Stack or a Queue
 batch_size = 1  # The size of our mini-batches
 embedding_size = 1  # The size of vectors held by the SimpleStruct
 
@@ -66,22 +66,26 @@ v4 = Variable(torch.randn(batch_size, embedding_size))
 s1 = Variable(torch.FloatTensor([[1.]]))
 s2 = Variable(torch.FloatTensor([[1.]])) if test_stack else Variable(torch.FloatTensor([[0.]]))
 
+print(struct.actual)
 test_push(struct, s1, s2, v1, v2)
 test_push(struct, s1, s2, v3, v4)
 
 
 # Read u then Pop u (actually what poped is just what read)
 u = 0.4
+print(struct.actual)
 test_read(struct, u)
 test_pop(struct, u)
 
 
 u = 7.0
+print(struct.actual)
 test_read(struct, u)
 test_pop(struct, u)
 
 
 u = 1.4
+print(struct.actual)
 test_read(struct, u)
 test_pop(struct, u)
 

@@ -1,5 +1,5 @@
-from __future__ import division
-from __future__ import print_function
+
+
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -18,9 +18,7 @@ from stacknn_utils import *
 from structs.simple import Stack
 
 
-class Task(object):
-
-    __metaclass__ = ABCMeta
+class Task(object, metaclass=ABCMeta):
 
     """
     Abstract class for creating experiments that train and evaluate a
@@ -104,7 +102,7 @@ class Task(object):
         def test(self):
             """ Get a Params object with test values set. """
             clone = deepcopy(self)
-            for key, value in clone.test_override.items():
+            for key, value in list(clone.test_override.items()):
                 setattr(clone, key, value)
 
             return clone
@@ -268,7 +266,7 @@ class Task(object):
         self.get_data()
         no_improvement_batches = 0
         best_acc = 0.
-        for epoch in xrange(self.params.epochs):
+        for epoch in range(self.params.epochs):
             self.run_epoch(epoch)
             if self.batch_acc <= best_acc:
                 no_improvement_batches += 1
@@ -314,7 +312,7 @@ class Task(object):
         self.model.train()
 
         last_trial = len(self.train_x.data) - self.batch_size + 1
-        for batch, i in enumerate(xrange(0, last_trial, self.batch_size)):
+        for batch, i in enumerate(range(0, last_trial, self.batch_size)):
 
             # Embed x if it is not one-hot.
             if self.embedding is None:
@@ -375,9 +373,9 @@ class Task(object):
 
         # Read the input from left to right and evaluate the output
         num_steps = self.params.time_function(self.max_x_length)
-        for j in xrange(num_steps):
+        for j in range(num_steps):
             self.model()
-        for j in xrange(self.max_x_length):
+        for j in range(self.max_x_length):
             a = self.model.read_output()
             self._log_prediction(a)
             loss, correct, total = self._evaluate_step(x, y, a, j)
@@ -504,7 +502,7 @@ class Task(object):
 
         print("Begin computation on input", x)
         if step:
-            raw_input("Press Enter to continue\n")
+            input("Press Enter to continue\n")
 
         self.model.trace_step(x_var, num_steps, step=step)
 
@@ -513,7 +511,7 @@ class Task(object):
         self.test_y = x_code
         self.reset_log()
         self.start_log()
-        for j in xrange(self.max_x_length):
+        for j in range(self.max_x_length):
             a = self.model.read_output()
             self._log_prediction(a)
         self.stop_log()
@@ -538,7 +536,7 @@ class Task(object):
         x = "x"
         while x != "":
             print()
-            x = raw_input("Please enter an input, or enter nothing to quit.\n")
+            x = input("Please enter an input, or enter nothing to quit.\n")
             x = x.strip()
             if x != "":
                 self.trace_step(x, step=step)
@@ -663,7 +661,7 @@ class Task(object):
 
         f = open(filename, "w")
         f.write("Input,Correct Output,Predicted Output\n")
-        for i in xrange(num_strings):
+        for i in range(num_strings):
             line = ",".join([self._logged_x_text[i], self._logged_y_text[i],
                              a_text[i]]) + "\n"
             f.write(line)
@@ -751,13 +749,13 @@ class FormalTask(Task):
         def __init__(self, **kwargs):
             self.max_x_length = kwargs.get("max_x_length", 10)
             self.max_y_length = kwargs.get("max_y_length", 10)
-            self.null = kwargs.get("null", u"#")
+            self.null = kwargs.get("null", "#")
             super(FormalTask.Params, self).__init__(**kwargs)
 
     def _init_model(self):
         # We need to initialize the alphabet before constructing the model.
         self.alphabet = self._init_alphabet(self.null)
-        self.code_to_word = {c: w for w, c in self.alphabet.iteritems()}
+        self.code_to_word = {c: w for w, c in self.alphabet.items()}
         return super(FormalTask, self)._init_model()
 
     @property

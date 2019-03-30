@@ -16,5 +16,7 @@ model = PDAVanillaModel(input_size, read_size, output_size, controller_type, str
 model.init_model(batch_size)
 inp = torch.FloatTensor(batch_size, input_size)
 
-print(model(inp))
-print(model(None))
+o1 = model(inp)
+o2 = model(None)
+
+o1.backward()

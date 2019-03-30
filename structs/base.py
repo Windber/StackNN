@@ -8,7 +8,6 @@ class PDAStruct(nn.Module, metaclass=ABCMeta):
         super(PDAStruct, self).__init__()
         self.embedding_size = embedding_size
         
-
         self.contents = Variable(torch.FloatTensor(0))
         self.strengths = Variable(torch.FloatTensor(0))
         #self._readcontent = None
