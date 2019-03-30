@@ -4,21 +4,23 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 class PDAStruct(nn.Module, metaclass=ABCMeta):
-    def __init__(self, batch_size, embedding_size):
+    def __init__(self, embedding_size):
         super(PDAStruct, self).__init__()
-        self.batch_size = batch_size
         self.embedding_size = embedding_size
-        self._zeros = Variable(torch.zeros(batch_size))
+        
 
         self.contents = Variable(torch.FloatTensor(0))
         self.strengths = Variable(torch.FloatTensor(0))
+        #self._readcontent = None
     
     def forward(self, u, d1, d2, v1, v2, r=None):
         self.push(d1, d2, v1, v2)
-        r = self.read(u)
+        readcontent = self.read(u)
         self.pop(u)
-        return r 
-
+        return readcontent
+    @abstractmethod
+    def _init_Struct(self, batch_size):
+        raise NotImplemented("Missing implementation for _init_Struct")
     @abstractmethod
     def pop(self, strength):
         raise NotImplementedError("Missing implementation for pop")
@@ -109,7 +111,7 @@ class Struct(nn.Module, metaclass=ABCMeta):
             read_strength = self._read_strength
         else:
             read_strength = 1
-
+        
         return self.read(read_strength)
 
     @abstractmethod

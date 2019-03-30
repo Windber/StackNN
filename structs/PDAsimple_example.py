@@ -52,9 +52,11 @@ embedding_size = 1  # The size of vectors held by the SimpleStruct
 
 # Create a struct
 if test_stack:
-    struct = PDAStack(batch_size, embedding_size)
+    struct = PDAStack(embedding_size)
 else:
-    struct = PDAQueue(batch_size, embedding_size)
+    struct = PDAQueue(embedding_size)
+
+struct._init_Struct(batch_size)
 
 # Push something
 v1 = Variable(torch.randn(batch_size, embedding_size))

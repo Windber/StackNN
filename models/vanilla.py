@@ -7,7 +7,119 @@ from torch.autograd import Variable
 from .base import Model
 from controllers.feedforward import LinearSimpleStructController
 from stacknn_utils.errors import unused_init_param
-from structs.simple import Stack
+from structs.simple import Stack, PDAStack, PDAQueue
+from structs.base import PDAStruct
+
+
+class PDAVanillaModel(Model):
+    """
+    A simple Model that uses a SimpleStruct as its data structure.
+    """
+
+    def __init__(self, input_size, read_size, output_size,
+                 controller_type=LinearSimpleStructController, struct_type=PDAStack,
+                 **kwargs):
+        super(PDAVanillaModel, self).__init__(read_size, struct_type)
+        self.read = None
+        self.z = None
+        self._controller = controller_type(input_size, read_size, output_size,
+                                     **kwargs)
+        self._struct = self._struct_type(self._read_size)
+        self._input_size = input_size
+        self._output_size = output_size
+        self._read_size = read_size
+
+        self._buffer_in = PDAQueue(self._input_size)
+        self._buffer_out = None
+
+        self._t = 0
+        self._zeros = None
+
+        self._push_input = kwargs.get("push_input", False)
+
+    def _init_struct(self, batch_size):
+            #self._struct._read = Variable(torch.zeros([batch_size, self._read_size]))
+            self._struct._init_Struct(batch_size)
+            #self._read = Variable(torch.zeros(batch_size, self._read_size)
+           
+            
+    def _init_buffer(self, batch_size, xs=None):
+        # have input queue
+        # dont have output queue
+        self._buffer_in._init_Struct(batch_size)
+        #self._readinput = Variable(torch.zeros(batch_size, self._input_size))
+        if xs:
+            pass
+        #self._buffer_out = []
+
+        self._t = 0
+        self._zeros = Variable(torch.zeros(batch_size, self._input_size))
+
+    """ Neural Network Computation """
+    def init_model(self, batch_size):
+        #super.init_model(batch_size, xs)
+        self._init_struct(batch_size)
+        self._init_buffer(batch_size)
+        self._init_controller(batch_size)
+        self.z = Variable(torch.ones(batch_size, 1))
+        self.read = Variable(torch.zeros(batch_size, self._read_size))
+        self._reg_loss = torch.zeros([batch_size, self._read_size])
+        self.batch_size = batch_size
+    def _init_controller(self, batch_size):
+        self._controller.init_controller(batch_size)
+        #self._z = self._controller.z
+    def forward(self, inp=None):
+        if self.read is None:
+            raise RuntimeError("The data structure has not been initialized.")
+        if self.z is None:
+            raise RuntimeError("The data structure has not been initialized.")
+        input_strength = Variable(torch.ones(self.batch_size, 1)) if inp is not None else Variable(torch.zeros(self.batch_size, 1))
+        inp_pad = inp if inp is not None else Variable(torch.zeros(self.batch_size, self._input_size))
+        inp_real = self._buffer_in(self.z, input_strength, Variable(torch.zeros(self.batch_size, 1)), inp_pad, Variable(torch.zeros(self.batch_size, self._input_size))) 
+        # output, v1, v2, (s1, s2, u, z)
+        o, v1, v2, (s1, s2, u, self.z)= self._controller(inp_real, self.read)
+        self.read = self._struct(u, s1, s2, v1, v2)
+        return o
+
+    """ Accessors """
+
+    def _read_input(self):
+        """
+        Returns the next vector from the input buffer.
+
+        :rtype: Variable
+        :return: The next vector from the input buffer
+        """
+        if self._t < self._buffer_in.size(1):
+            self._t += 1
+            return self._buffer_in[:, self._t - 1, :]
+        else:
+            return self._zeros
+
+    def read_output(self):
+        """
+        Returns the next vector from the output buffer.
+
+        :rtype: Variable
+        :return: The next vector from the output buffer
+        """
+        if len(self._buffer_out) > 0:
+            return self._buffer_out.pop(0)
+        else:
+            return None
+
+    def _write_output(self, value):
+        """
+        Adds a symbol to the output buffer.
+
+        :type value: Variable
+        :param value: The value to add to the output buffer
+
+        :return: None
+        """
+        self._buffer_out.append(value)
+
+    """ Reporting """
 
 
 class VanillaModel(Model):

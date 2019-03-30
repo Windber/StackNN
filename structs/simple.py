@@ -319,8 +319,8 @@ class SimpleStruct(Struct, metaclass=ABCMeta):
             self.print_summary(b)
 
 class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
-    def __init__(self, batch_size, embedding_size, k=None):
-        super(PDASimpleStruct, self).__init__(batch_size, embedding_size)
+    def __init__(self, embedding_size, k=None):
+        super(PDASimpleStruct, self).__init__(embedding_size)
         operations = [Operation.push, Operation.pop]
         
         self._reg_trackers = [None for _ in operations]
@@ -334,6 +334,10 @@ class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
         # So dont need this function
         pass
     
+    def _init_Struct(self, batch_size):
+        #self._read = Variable(torch.zeros([batch_size, self.embedding_size]))
+        self._zeros = Variable(torch.zeros(batch_size))
+        self.batch_size = batch_size
     def __len__(self):
         return len(self._values)
 
@@ -383,7 +387,7 @@ class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
         reg_tracker = self._reg_trackers[operation]
         if reg_tracker is not None:
             reg_tracker.regularize(strength)
-
+    
 
     def print_summary(self, batch):
         """
