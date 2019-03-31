@@ -15,88 +15,53 @@ from torch.autograd import Variable
 from models.vanilla import PDAVanillaModel
 from controllers.recurrent import PDALSTMSimpleStructController
 from stacknn_utils import *
-from structs.simple import PDAStack
+from structs.simple import Stack, PDAStack
 from .base import Task
-
+import pandas as pd
+import time
 class PDATask(Task, metaclass=ABCMeta):
-    class Params:
+    class Params(Task.Params):
 
-        """Contains fully-specified parameters for this object.
-
-        Parameters are either copied from kwargs are receive a default value.
-        This inner class should be extended by subclasses of Task. The semantics
-        of the parameter fields should be annotated in the class docstring.
-
-        Attributes:
-            model_type: A class extending Model.
-            controller_type: A class extending SimpleStructController.
-            struct_type: A class extending Struct.
-            batch_size: The number of trials in each mini-batch.
-            clipping_norm: Related to gradient clipping.
-            criterion: The loss function.
-            
-            : If true and CUDA is available, the model will use it.
-            epochs: Number of epochs to train for.
-            early_stopping_steps: Number of epochs of no improvement that are
-                required to stop early.
-            hidden_size: The size of hidden state vectors.
-            learning_rate: The learning rate.
-            l2_weight: Float controlling the amount of L2 regularization.
-            read_size: The length of vectors on the neural data structure.
-            time_function: A function specifying the maximum number of
-                computation steps in terms of input length.
-            verbose: Boolean describing how much output should be generated.
-            verbosity: Periodicity for printing batch summaries.
-            load_path: Path for loading a model.
-            save_path: Path for saving a model.
-            test_override: Object describing params to override when evaluating
-                a model for testing.
+        """
+        parameters in config_dict:
+            task*
+        parameters in Task.Params:
+            model_type*
+            controller_type*
+            struct_type*
+            batch_size*
+            clipping_norm
+            criterion
+            early_stopping_steps
+            hidden_size*
+            learning_rate*
+            l2_weight
+            read_size*
+            time_function
+            verbose
+            verbosity
+            load_path*
+            save_path*
+            test_override
+            custom_initialization
+        parameters in PDATask.Params:
+            input_size
+            output_size
+            leafting_norm:gradient minmum value
+            trd_path
+            ted_path
         """
 
         def __init__(self, **kwargs):
-            """Extract passed arguments or use the default values."""
-            self.model_type = kwargs.get("model_type", PDAVanillaModel)
-            self.controller_type = kwargs.get(
-                "controller_type", PDALSTMSimpleStructController)
-            self.struct_type = kwargs.get("struct_type", Stack)
-            self.batch_size = kwargs.get("batch_size", 10)
-            self.clipping_norm = kwargs.get("clipping_norm", None)
-            self.criterion = kwargs.get("criterion", nn.CrossEntropyLoss())
-            self.cuda = kwargs.get("cuda", True)
-            self.epochs = kwargs.get("epochs", 100)
-            self.early_stopping_steps = kwargs.get("early_stopping_steps", 5)
-            self.hidden_size = kwargs.get("hidden_size", 10)
-            self.learning_rate = kwargs.get("learning_rate", 0.01)
-            self.l2_weight = kwargs.get("l2_weight", 0.01)
-            self.read_size = kwargs.get("read_size", 2)
-            self.reg_weight = kwargs.get("reg_weight", 1.)
-            self.time_function = kwargs.get("time_function", lambda t: t)
-            self.verbose = kwargs.get("verbose", True)
-            self.verbosity = kwargs.get("verbosity", 10)
-            self.custom_initialization = kwargs.get("custom_initialization", True)
-            self.load_path = kwargs.get("load_path", None)
-            self.save_path = kwargs.get("save_path", None)
-            self.test_override = kwargs.get("test_override", dict())
-
-
-        def __iter__(self):
-            return ((attr, getattr(self, attr)) for attr in dir(self)
-                    if not attr.startswith("_"))
-
-        def print_experiment_start(self):
-            for key, value in self:
-                if type(value) == type:
-                    value = value.__name__
-                print(("%s: %s" % (key, value)))
-
-        @property
-        def test(self):
-            """ Get a Params object with test values set. """
-            clone = deepcopy(self)
-            for key, value in list(clone.test_override.items()):
-                setattr(clone, key, value)
-
-            return clone
+            self.input_size = kwargs.get("input_size", 6)
+            self.output_size = kwargs.get("output_size", 2)
+            self.leafting_norm = kwargs.get("leafting_norm", 0.2)
+            self.trd_path = kwargs.get("trd_path", None)
+            self.ted_path = kwargs.get("ted_path", None)
+            #del kwargs["input_size"]
+            #del kwargs["output_size"]
+            #del kwargs["leafting_norm"]
+            super(PDATask.Params, self).__init__(**kwargs)
     def __init__(self, params):
         self.params = params
         self.model = self._init_model()
@@ -117,6 +82,7 @@ class PDATask(Task, metaclass=ABCMeta):
         self.optimizer = optim.Adam(self.model.parameters(),
                                     lr=self.params.learning_rate,
                                     weight_decay=self.params.l2_weight)
+        self.loss_func = torch.nn.CrossEntropyLoss(reduction='sum')
         # Initialize training and testing data.
         self.train_x = None
         self.train_y = None
@@ -137,14 +103,14 @@ class PDATask(Task, metaclass=ABCMeta):
         #self.output_size = 2
     def _init_model(self):
         # TODO: Should initialize controller/task here and pass it in.
-        return self.params.model_type(self.input_size,
+        return self.params.model_type(self.params.input_size,
                                       self.params.read_size,
-                                      self.output_size,
-                                      controller_type=self.controller_type,
-                                      struct_type=self.struct_type,
-                                      hidden_size=self.hidden_size,
-                                      reg_weight=self.reg_weight,
-                                      custom_initialization=self.custom_initialization)
+                                      self.params.output_size,
+                                      controller_type=self.params.controller_type,
+                                      struct_type=self.params.struct_type,
+                                      hidden_size=self.params.hidden_size,
+                                      reg_weight=self.params.reg_weight,
+                                      custom_initialization=self.params.custom_initialization)
     @classmethod
     def from_config_dict(cls, config_dict):
         """Create a new task instance from a config dict."""
@@ -158,9 +124,9 @@ class PDATask(Task, metaclass=ABCMeta):
         del config_dict["task"]
         params = task_type.Params(**config_dict)
         return task_type(params)
-    @abstractmethod
     def _evaluate_step(self, x, y, a, j):
         raise NotImplementedError("Missing implementation for _evaluate_step")
+
     def run_experiment(self):
         self._print_experiment_start()
         # To do
@@ -212,32 +178,35 @@ class PDATask(Task, metaclass=ABCMeta):
     def _evaluate_batch(self, x, y, name, is_batch):
         # size of x: (batch_size, characters, input_size/embedding_size)
         # size of y: (batch_size, characters, output_size)
+        
+        start_time = time.time()
         batch_loss = torch.zeros(1)
         batch_correct = 0
         batch_total = 0
         # size of actual_count: (batch_size, 1)
         #actual_count 
         feed_count = 0
-        inp_len = x.size[1]
+        inp_len = x.size()[1]
         outputs_tensor = torch.Tensor()
         z_tensor = torch.Tensor()
-        # need to select another one for category task
-        loss_fun = torch.nn.MSELoss(reduction='sum')
          
         while self.model._buffer_in._actual != 0. or feed_count < inp_len:
             x_feed = x[:, feed_count, :] if feed_count < inp_len else None
-            z_tensor = torch.cat(z_tensor, 
+            z_tensor = torch.cat([z_tensor, 
                                 torch.zeros(self.params.batch_size, 1, 1),
+                                ],
                                 1)
-            z_tensor[:, feed_count, :] = self.model.z[:, :].clone()
+            z_tensor[:, feed_count, :] = self.model.z#[:, :]#.clone()
             
             #size of output: (batch_size, output_size)
             output = self.model(x_feed)
-            outputs_tensor = torch.cat(outputs_tensor, 
+            outputs_tensor = torch.cat([outputs_tensor, 
                                        torch.zeros(self.params.batch_size, 1, self.output_size()),
-                                       1)
+                                       ],
+                                        1)
             outputs_tensor[:, feed_count, :] = output[:, :].clone()
             feed_count += 1
+        #print("Forward computation completed.")
         #size of outputs_tensor: (batch_size, characters, output_size)
         #size of z_tensor: (batch_size, characters, 1)
         #threshod = 0.99 threshold > 1 - 1/(inp)
@@ -250,9 +219,9 @@ class PDATask(Task, metaclass=ABCMeta):
             # loop for count the original y
             c_index = 0
             for ci in sample:
-                ot_pred = outputs_tensor[bi, ci[0]]
-                ot = y[bi, c_index]
-                batch_loss += loss_fun()
+                ot_pred = outputs_tensor[bi, ci[0]].clone().view(1, -1)
+                ot = y[bi, c_index].clone()
+                batch_loss += self.loss_func(ot_pred, ot)
                 c_index += 1
                 is_correct = 1 if torch.topk(ot_pred, 1)[1][0] == torch.topk(ot, 1)[1][0] else 0
                 batch_correct += is_correct
@@ -263,6 +232,7 @@ class PDATask(Task, metaclass=ABCMeta):
         if is_batch:
             self.optimizer.zero_grad()
             batch_loss.backward()
+            #batch_loss.backward(retain_graph=True)
             if self.clipping_norm:
                 nn.utils.clip_grad_norm(self.model.parameters(),
                                         self.clipping_norm)
@@ -273,7 +243,8 @@ class PDATask(Task, metaclass=ABCMeta):
 
         # Make the accuracy accessible for early stopping.
         self.batch_acc = batch_correct / batch_total
-    
+        consume_time = time.time() - start_time
+        #print("Bacth %s: cosume %ds actual %d steps average %f s/step" % (name, consume_time, feed_count, consume_time/feed_count))
     def evaluate(self, epoch):
         if self.test_x is None or self.test_y is None:
             raise ValueError("Missing testing data")
@@ -299,3 +270,51 @@ class PDATask(Task, metaclass=ABCMeta):
         print(("Starting {} Experiment".format(type(self).__name__)))
         self.model.print_experiment_start()
         self.params.print_experiment_start()
+
+class PDACFGTask(PDATask):
+    def input_size(self):
+        return 6
+    def output_size(self):
+        return 2
+    def get_data(self):
+        D = {'s': [1, 0, 0, 0 ,0, 0],
+            'e': [0, 0, 0, 0 ,0, 1],
+            '[': [0, 1, 0, 0 ,0, 0],
+            ']': [0, 0, 1, 0 ,0, 0],
+            '{': [0, 0, 0, 1 ,0, 0],
+            '}': [0, 0, 0, 0 ,1, 0],
+            }
+        DO = {'0': [0], 
+              '1': [1],
+              }
+        trd_path = self.trd_path
+        ted_path = self.ted_path
+        trd = pd.read_csv(trd_path, header=None, dtype={0: str, 1: str})
+        trd_x = trd.iloc[:, 0]
+        trd_y = trd.iloc[:, 1]
+        ted = pd.read_csv(ted_path, header=None, dtype={0: str, 1: str})
+        ted_x = ted.iloc[:, 0]
+        ted_y = ted.iloc[:, 1]
+        
+        trd_x1 = [list(s) for s in list(trd_x)]
+        trd_y1 = [list(s) for s in list(trd_y)]
+        ted_x1 = [list(s) for s in list(ted_x)]
+        ted_y1 = [list(s) for s in list(ted_y)]
+    
+        for i, s in enumerate(trd_x1):
+            for j, c in enumerate(s):
+                trd_x1[i][j] = D[c]
+        self.train_x = torch.Tensor(trd_x1)
+        for i, s in enumerate(trd_y1):
+            for j, c in enumerate(s):
+                trd_y1[i][j] = DO[c]
+        self.train_y = torch.Tensor(trd_y1).long()
+        for i, s in enumerate(ted_x1):
+            for j, c in enumerate(s):
+                ted_x1[i][j] = D[c]
+        self.test_x = torch.Tensor(ted_x1)
+        for i, s in enumerate(ted_y1):
+            for j, c in enumerate(s):
+                ted_y1[i][j] = DO[c]
+        self.test_y = torch.Tensor(ted_y1).long()
+        

@@ -269,7 +269,6 @@ class PDALSTMSimpleStructController(SimpleStructController):
 
         self._hidden = None
         self._cell_state = None
-        #self._z = None
 
         # Create an LSTM Module object
         nn_input_size = self._input_size + self._read_size

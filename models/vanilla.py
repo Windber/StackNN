@@ -12,31 +12,34 @@ from structs.base import PDAStruct
 
 
 class PDAVanillaModel(Model):
-    """
-    A simple Model that uses a SimpleStruct as its data structure.
-    """
 
     def __init__(self, input_size, read_size, output_size,
                  controller_type=LinearSimpleStructController, struct_type=PDAStack,
                  **kwargs):
         super(PDAVanillaModel, self).__init__(read_size, struct_type)
-        self.read = None
-        self.z = None
-        self._controller = controller_type(input_size, read_size, output_size,
-                                     **kwargs)
-        self._struct = self._struct_type(self._read_size)
+        
+        self._controller_type = controller_type
         self._input_size = input_size
         self._output_size = output_size
-        self._read_size = read_size
+        
+        self._read = None
+        self._z = None
 
+        self._u = None
+        self._s1 = None
+        self._s2 = None
+        self._v1 = None
+        self._v2 = None
+        
+        self._controller = self._controller_type(input_size, read_size, output_size, **kwargs)
+        self._struct = self._struct_type(self._read_size)
         self._buffer_in = PDAQueue(self._input_size)
-        self._buffer_out = None
 
         self._t = 0
         self._zeros = None
 
-        self._push_input = kwargs.get("push_input", False)
-
+        
+    
     def _init_struct(self, batch_size):
             #self._struct._read = Variable(torch.zeros([batch_size, self._read_size]))
             self._struct._init_Struct(batch_size)
@@ -77,8 +80,8 @@ class PDAVanillaModel(Model):
         inp_pad = inp if inp is not None else Variable(torch.zeros(self.batch_size, self._input_size))
         inp_real = self._buffer_in(self.z, input_strength, Variable(torch.zeros(self.batch_size, 1)), inp_pad, Variable(torch.zeros(self.batch_size, self._input_size))) 
         # output, v1, v2, (s1, s2, u, z)
-        o, v1, v2, (s1, s2, u, self.z)= self._controller(inp_real, self.read)
-        self.read = self._struct(u, s1, s2, v1, v2)
+        o, self._v1, self._v2, (self._s1, self._s2, self._u, self._z)= self._controller(inp_real, self.read)
+        self.read = self._struct(self._u, self._s1, self._s2, self._v1, self._v2)
         return o
 
     """ Accessors """
@@ -119,7 +122,18 @@ class PDAVanillaModel(Model):
         """
         self._buffer_out.append(value)
 
-    """ Reporting """
+    @property
+    def read(self):
+        return self._read
+    @read.setter
+    def read(self, r):
+        self._read = r
+    @property
+    def z(self):
+        return self._z
+    @z.setter
+    def z(self, z):
+        self._z = z
 
 
 class VanillaModel(Model):

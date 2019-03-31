@@ -326,19 +326,21 @@ class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
         self._reg_trackers = [None for _ in operations]
         self._read_strength = k
         
-        self._values = []
-        self._strengths = []
+        self._values = None
+        self._strengths = None
     
     def init_contents(self, xs):
         # Becasue its action always "push first and pop then"
         # So dont need this function
-        pass
+        self._values = list()
+        self._strengths = list()
     
     def _init_Struct(self, batch_size):
         #self._read = Variable(torch.zeros([batch_size, self.embedding_size]))
         self._zeros = Variable(torch.zeros(batch_size))
         self.batch_size = batch_size
         self._actual = torch.zeros(batch_size, 1)
+        self.init_contents(None)
     def __len__(self):
         return len(self._values)
 
@@ -367,7 +369,7 @@ class PDASimpleStruct(PDAStruct, metaclass=ABCMeta):
         self._strengths.insert(push_index+1, strength2)
         
     def read(self, u):
-        summary = Variable(torch.zeros([self.batch_size, self.embedding_size]))
+        summary = Variable(torch.zeros([self.batch_size, self._embedding_size]))
         strength_used = Variable(torch.zeros(self.batch_size, 1))
         for i in self._read_indices():
             summary += self._values[i] * torch.min(self._strengths[i], torch.max(u - strength_used))
