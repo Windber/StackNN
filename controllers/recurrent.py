@@ -341,7 +341,7 @@ class PDALSTMSimpleStructController(SimpleStructController):
         v1 = self._tanh_v1(self._linear_v1(self._hidden))
         v2 = self._tanh_v2(self._linear_v2(self._hidden))
         nargs = self._sigmoid_nargs(self._linear_nargs(self._hidden))
-        instructions = tuple(nargs[:, j].contiguous() for j in range(self._n_args))
+        instructions = tuple(nargs[:, j].contiguous().view(-1, 1) for j in range(self._n_args))
         # To do
         self._log(x, output, v1, *instructions)
         # output, v1, v2, (s1, s2, u, z)

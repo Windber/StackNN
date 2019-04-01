@@ -178,7 +178,7 @@ class PDATask(Task, metaclass=ABCMeta):
     def _evaluate_batch(self, x, y, name, is_batch):
         # size of x: (batch_size, characters, input_size/embedding_size)
         # size of y: (batch_size, characters, output_size)
-        
+        batch_size = x.size()[0]
         start_time = time.time()
         batch_loss = torch.zeros(1)
         batch_correct = 0
@@ -190,10 +190,11 @@ class PDATask(Task, metaclass=ABCMeta):
         outputs_tensor = torch.Tensor()
         z_tensor = torch.Tensor()
          
-        while self.model._buffer_in._actual != 0. or feed_count < inp_len:
-            x_feed = x[:, feed_count, :] if feed_count < inp_len else None
+        while torch.sum(self.model._buffer_in._actual).item() != 0. or feed_count < inp_len:
+            x_feed = x[:, feed_count, :] if feed_count < inp_len else torch.zeros(batch_size, self.params.input_size)
             z_tensor = torch.cat([z_tensor, 
-                                torch.zeros(self.params.batch_size, 1, 1),
+                                #torch.zeros(self.params.batch_size, 1, 1),
+                                torch.zeros(batch_size, 1, 1),
                                 ],
                                 1)
             z_tensor[:, feed_count, :] = self.model.z#[:, :]#.clone()
@@ -201,7 +202,7 @@ class PDATask(Task, metaclass=ABCMeta):
             #size of output: (batch_size, output_size)
             output = self.model(x_feed)
             outputs_tensor = torch.cat([outputs_tensor, 
-                                       torch.zeros(self.params.batch_size, 1, self.output_size()),
+                                       torch.zeros(batch_size, 1, self.output_size()),
                                        ],
                                         1)
             outputs_tensor[:, feed_count, :] = output[:, :].clone()
@@ -221,11 +222,12 @@ class PDATask(Task, metaclass=ABCMeta):
             for ci in sample:
                 ot_pred = outputs_tensor[bi, ci[0]].clone().view(1, -1)
                 ot = y[bi, c_index].clone()
-                batch_loss += self.loss_func(ot_pred, ot)
+                if sum(x[bi, c_index]) != 0.:
+                    batch_loss += self.loss_func(ot_pred, ot)
+                    is_correct = 1 if torch.topk(ot_pred, 1)[1][0] == torch.topk(ot, 1)[1][0] else 0
+                    batch_correct += is_correct
+                    batch_total += 1
                 c_index += 1
-                is_correct = 1 if torch.topk(ot_pred, 1)[1][0] == torch.topk(ot, 1)[1][0] else 0
-                batch_correct += is_correct
-                batch_total += 1
         # Regularization
         # pass
         #Update
@@ -256,7 +258,7 @@ class PDATask(Task, metaclass=ABCMeta):
             test_x = self.test_x
         else:
             test_x = self.embedding(self.test_x)
-        self.model.init_model(self.params.batch_size)
+        self.model.init_model(test_x.size()[0])
         self._evaluate_batch(self.test_x, self.test_y, epoch, False)
         
     def _print_experiment_start(self):
@@ -283,6 +285,7 @@ class PDACFGTask(PDATask):
             ']': [0, 0, 1, 0 ,0, 0],
             '{': [0, 0, 0, 1 ,0, 0],
             '}': [0, 0, 0, 0 ,1, 0],
+            'l': [0, 0, 0, 0 ,0, 0],
             }
         DO = {'0': [0], 
               '1': [1],

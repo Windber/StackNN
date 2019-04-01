@@ -76,9 +76,17 @@ class PDAVanillaModel(Model):
             raise RuntimeError("The data structure has not been initialized.")
         if self.z is None:
             raise RuntimeError("The data structure has not been initialized.")
-        input_strength = Variable(torch.ones(self.batch_size, 1)) if inp is not None else Variable(torch.zeros(self.batch_size, 1))
-        inp_pad = inp if inp is not None else Variable(torch.zeros(self.batch_size, self._input_size))
-        inp_real = self._buffer_in(self.z, input_strength, Variable(torch.zeros(self.batch_size, 1)), inp_pad, Variable(torch.zeros(self.batch_size, self._input_size))) 
+        '''
+        if inp:
+            notl = True
+        else:
+            notl = sum(inp) != 0.
+        input_strength = Variable(torch.ones(self.batch_size, 1)) if notl else Variable(torch.zeros(self.batch_size, 1))
+        inp_pad = inp if notl else Variable(torch.zeros(self.batch_size, self._input_size))
+        '''
+        input_strength = torch.sum(inp, dim=1).view(-1, 1)
+        
+        inp_real = self._buffer_in(self.z, input_strength, Variable(torch.zeros(self.batch_size, 1)), inp, Variable(torch.zeros(self.batch_size, self._input_size))) 
         # output, v1, v2, (s1, s2, u, z)
         o, self._v1, self._v2, (self._s1, self._s2, self._u, self._z)= self._controller(inp_real, self.read)
         self.read = self._struct(self._u, self._s1, self._s2, self._v1, self._v2)

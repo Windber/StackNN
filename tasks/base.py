@@ -727,6 +727,7 @@ class Task(object, metaclass=ABCMeta):
         accuracy = 100. * (batch_correct * 1.0) / batch_total
         message += "Loss = {:.2f}, Accuracy = {:.1f}%".format(loss, accuracy)
         print(message)
+        print("batch_correct: %d, batch_total: %d" % (batch_correct, batch_total))
 
 
 class FormalTask(Task):
