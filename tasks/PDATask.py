@@ -19,6 +19,7 @@ from structs.simple import Stack, PDAStack
 from .base import Task
 import pandas as pd
 import time
+import random
 class PDATask(Task, metaclass=ABCMeta):
     class Params(Task.Params):
 
@@ -58,49 +59,16 @@ class PDATask(Task, metaclass=ABCMeta):
             self.leafting_norm = kwargs.get("leafting_norm", 0.2)
             self.trd_path = kwargs.get("trd_path", None)
             self.ted_path = kwargs.get("ted_path", None)
+            self.cross_validation = kwargs.get("cross_validation", False)
+            self.kfold = kwargs.get("kfold", 10)
             #del kwargs["input_size"]
             #del kwargs["output_size"]
             #del kwargs["leafting_norm"]
             super(PDATask.Params, self).__init__(**kwargs)
     def __init__(self, params):
-        self.params = params
-        self.model = self._init_model()
-        if self.params.cuda:
-            if torch.cuda.is_available():
-                self.model.cuda()
-                print("CUDA enabled!")
-            else:
-                warnings.warn("CUDA is not available.")
-        # Load a saved model if one is specified.
-        if self.params.load_path:
-            self.model.load_state_dict(torch.load(self.load_path))
-            self._has_trained_model = True
-        else:
-            self._has_trained_model = False
-        
-        self.embedding = None
-        self.optimizer = optim.Adam(self.model.parameters(),
-                                    lr=self.params.learning_rate,
-                                    weight_decay=self.params.l2_weight)
+        super(PDATask, self).__init__(params)
         self.loss_func = torch.nn.CrossEntropyLoss(reduction='sum')
-        # Initialize training and testing data.
-        self.train_x = None
-        self.train_y = None
-        self.test_x = None
-        self.test_y = None
 
-        # Initialize various reporting hidden variables.
-        self._logging = False
-        self._logged_x_text = None
-        self._logged_y_text = None
-        self._logged_a = None
-        self._logged_loss = None
-        self._logged_correct = None
-        self._curr_log_index = 0
-        self.batch_acc = None
-        
-        #self.input_size = 8
-        #self.output_size = 2
     def _init_model(self):
         # TODO: Should initialize controller/task here and pass it in.
         return self.params.model_type(self.params.input_size,
@@ -132,20 +100,55 @@ class PDATask(Task, metaclass=ABCMeta):
         # To do
         self.get_data()
         accuracy_best = 0
-        for epoch in range(self.params.epochs):
-            self.run_epoch(epoch)
-            if self.batch_acc >= accuracy_best:
-                accuracy_best = self.batch_acc
-                if self.save_path:
-                    torch.save(self.model.state_dict(), self.save_path)
-        self._has_trained_model = True
+        if self.params.cross_validation:
+            ntotal = self.train_x.size()[0]
+            nperfold = ntotal // self.params.kfold
+            tmpselftrainx = self.train_x
+            tmpselftrainy = self.train_y
+            tmpselftesty = self.test_y
+            tmpselftestx = self.test_x
+            total_index = set(range(0, ntotal))
+            for i in range(kfold):
+                validation_index = set(range(k*nperfold, (k+1) * nperfold))
+                train_index = list(total_index - validation_index)
+                random.shuffle(train_index)
+                validation_index = list(validation_index)
+                self.train_x = tmpselftrainx[train_index]
+                self.train_y = tmpselftrainy[train_index]
+                self.test_x = tmpselftrainx[validation_index]
+                self.test_y = tmpselftrainy[validation_index]
+                for epoch in range(self.params.epochs):
+                    self.run_epoch(epoch)
+                    if self.batch_acc >= accuracy_best:
+                        accuracy_best = self.batch_acc
+                        if self.save_path:
+                            torch.save(self.model.state_dict(), self.save_path + time.strftime("@%d_%H_%M"))
+                            self._has_trained_model = True
+                #self.evaluate(epoch)
+                self.evaluate()
+                #need to record the score of each model and save the best model
+        else:
+            for epoch in range(self.params.epochs):
+                self.run_epoch(epoch)
+                if self.batch_acc >= accuracy_best:
+                    accuracy_best = self.batch_acc
+                    if self.save_path:
+                        torch.save(self.model.state_dict(), self.save_path + time.strftime("@%d_%H_%M"))
+                        self._has_trained_model = True
+                #self.evaluate(epoch)
+            if self.save_path:
+                torch.save(self.model.state_dict(), self.save_path.replace("best", "final") + time.strftime("@%d_%H_%M"))
+                self._has_trained_model = True
         return dict(best_acc=accuracy_best, final_acc=self.batch_acc)
     
+    def test(self):
+        self.evaluate(0)
+
     def run_epoch(self, epoch):
         self._print_epoch_start(epoch)
         self._shuffle_training_data()
         self.train()
-        self.evaluate(epoch)
+    
 
     def train(self):
         """
@@ -207,7 +210,7 @@ class PDATask(Task, metaclass=ABCMeta):
                                         1)
             outputs_tensor[:, feed_count, :] = output[:, :].clone()
             feed_count += 1
-        #print("Forward computation completed.")
+        print("Batch %d Forward computation completed." % (name), end='    ')
         #size of outputs_tensor: (batch_size, characters, output_size)
         #size of z_tensor: (batch_size, characters, 1)
         #threshod = 0.99 threshold > 1 - 1/(inp)
@@ -239,13 +242,16 @@ class PDATask(Task, metaclass=ABCMeta):
                 nn.utils.clip_grad_norm(self.model.parameters(),
                                         self.clipping_norm)
             self.optimizer.step()
+            consume_time = time.time() - start_time
+            print("Backard computation completed. Total consumed: %ds" % (consume_time))
         # Log the results.
-        self._print_batch_summary(name, is_batch, batch_loss, batch_correct,
+        self._print_batch_summary(name, is_batch, batch_loss / batch_total, batch_correct,
                                   batch_total)
 
         # Make the accuracy accessible for early stopping.
         self.batch_acc = batch_correct / batch_total
-        consume_time = time.time() - start_time
+        
+        
         #print("Bacth %s: cosume %ds actual %d steps average %f s/step" % (name, consume_time, feed_count, consume_time/feed_count))
     def evaluate(self, epoch):
         if self.test_x is None or self.test_y is None:

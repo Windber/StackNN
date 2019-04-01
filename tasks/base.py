@@ -17,7 +17,6 @@ from controllers.feedforward import LinearSimpleStructController
 from stacknn_utils import *
 from structs.simple import Stack
 
-
 class Task(object, metaclass=ABCMeta):
 
     """
