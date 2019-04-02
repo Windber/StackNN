@@ -13,7 +13,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 
 from models.vanilla import PDAVanillaModel
-from controllers.recurrent import PDALSTMSimpleStructController
+from controllers.recurrent import PDALSTMSimpleStructController, PDAGRUSimpleStructController, PDARNNSimpleStructController
 from stacknn_utils import *
 from structs.simple import Stack, PDAStack
 from .base import Task
@@ -250,7 +250,7 @@ class PDATask(Task, metaclass=ABCMeta):
 
         # Make the accuracy accessible for early stopping.
         self.batch_acc = batch_correct / batch_total
-        
+        return batch_total, batch_correct
         
         #print("Bacth %s: cosume %ds actual %d steps average %f s/step" % (name, consume_time, feed_count, consume_time/feed_count))
     def evaluate(self, epoch):
@@ -258,15 +258,29 @@ class PDATask(Task, metaclass=ABCMeta):
             raise ValueError("Missing testing data")
 
         self.model.eval()
-
-        # Embed the input data if necessary.
-        if self.embedding is None:
-            test_x = self.test_x
-        else:
-            test_x = self.embedding(self.test_x)
-        self.model.init_model(test_x.size()[0])
-        self._evaluate_batch(self.test_x, self.test_y, epoch, False)
-        
+        n = self.test_x.size()[0]
+        total = 0
+        correct = 0
+        batch_size = len(self.test_x)
+        for i in range(0, n, batch_size):
+            # Embed the input data if necessary.
+            if i + batch_size > n:
+                end = n
+            else:
+                end = i + batch_size
+            
+            if self.embedding is None:
+                test_x = self.test_x[i: end]
+            else:
+                test_x = self.embedding(self.test_x[i: end])
+            test_y = self.test_y[i: end]
+            
+            self.model.init_model(len(test_x))
+            with torch.no_grad():
+                bt, bc = self._evaluate_batch(test_x, test_y, epoch, False)
+            total += bt
+            correct += bc
+        print("Test accuracy: %f%%" % (correct / total))
     def _print_experiment_start(self):
         """
         Prints information about this Task's hyperparameters at the

@@ -84,7 +84,7 @@ class RNNSimpleStructController(SimpleStructController):
 
     def _init_hidden(self, batch_size):
         """
-        Initializes the hidden state of the LSTM cell to zeros.
+        Initializes the hidden state of the GRU cell to zeros.
 
         :type batch_size: int
         :param batch_size: The number of trials in each mini-batch where
@@ -252,104 +252,6 @@ class LSTMSimpleStructController(SimpleStructController):
         self._log(x, torch.sigmoid(output), v, *instructions)
 
         return output, ((v,) + instructions)
-class PDALSTMSimpleStructController(SimpleStructController):
-    def __init__(self, input_size, read_size, output_size,
-                 custom_initialization=False,
-                 discourage_pop=False,
-                 hidden_size=16,
-                 n_args=4,
-                 **kwargs):
-        super(PDALSTMSimpleStructController, self).__init__(input_size,
-                                                      read_size,
-                                                      output_size,
-                                                      n_args=n_args)
-
-        for param_name, arg_value in kwargs.items():
-            unused_init_param(param_name, arg_value, self)
-
-        self._hidden = None
-        self._cell_state = None
-
-        # Create an LSTM Module object
-        nn_input_size = self._input_size + self._read_size
-        nn_output_size = self._n_args + self._read_size * 2 + self._output_size
-        self._lstm = nn.LSTMCell(nn_input_size, hidden_size)
-        self._linear_nargs = nn.Linear(hidden_size, self._n_args)
-        self._sigmoid_nargs = nn.Sigmoid()
-        self._linear_v1 = nn.Linear(hidden_size, self._read_size)
-        self._tanh_v1 = nn.Tanh()
-        self._linear_v2 = nn.Linear(hidden_size, self._read_size)
-        self._tanh_v2 = nn.Tanh()
-        self._linear_o = nn.Linear(hidden_size, self._output_size)
-        self._tanh_o = nn.Tanh()
-
-        if custom_initialization:
-            LSTMSimpleStructController.init_normal(self._lstm.weight_hh)
-            LSTMSimpleStructController.init_normal(self._lstm.weight_ih)
-            self._lstm.bias_hh.data.fill_(0)
-            self._lstm.bias_ih.data.fill_(0)
-
-            LSTMSimpleStructController.init_normal(self._linear.weight)
-            self._linear.bias.data.fill_(0)
-
-        if discourage_pop:
-            self._linear.bias.data[0] = -1.  # Discourage popping
-            if n_args >= 4:
-                self._linear.bias.data[2] = 1.  # Encourage reading
-                self._linear.bias.data[3] = 1.  # Encourage writing
-
-    def _init_hidden(self, batch_size):
-        """
-        Initializes the hidden state of the LSTM cell to zeros.
-
-        :type batch_size: int
-        :param batch_size: The number of trials in each mini-batch where
-            this Model is used
-
-        :return: None
-        """
-        lstm_hidden_shape = (batch_size, self._lstm.hidden_size)
-        self._hidden = Variable(torch.zeros(lstm_hidden_shape))
-        self._cell_state = Variable(torch.zeros(lstm_hidden_shape))
-
-    def init_controller(self, batch_size):
-        self._init_hidden(batch_size)
-        #self._z = 1.
-
-    def forward(self, x, r):
-        """
-        Computes an output and data structure instructions using a
-        single linear layer.
-
-        :type x: Variable
-        :param x: The input to this Controller
-
-        :type r: Variable
-        :param r: The previous item read from the neural data structure
-
-        :rtype: tuple
-        :return: A tuple of the form (y, (v, u, d)), interpreted as
-            follows:
-                - output y
-                - pop a strength u from the data structure
-                - push v with strength d to the data structure
-        """
-        self._hidden, self._cell_state = self._lstm(
-            torch.cat([x, r], 1), (self._hidden, self._cell_state))
-
-        output = self._tanh_o(self._linear_o(self._hidden))
-        v1 = self._tanh_v1(self._linear_v1(self._hidden))
-        v2 = self._tanh_v2(self._linear_v2(self._hidden))
-        nargs = self._sigmoid_nargs(self._linear_nargs(self._hidden))
-        instructions = tuple(nargs[:, j].contiguous().view(-1, 1) for j in range(self._n_args))
-        # To do
-        self._log(x, output, v1, *instructions)
-        # output, v1, v2, (s1, s2, u, z)
-        return output, v1, v2, instructions
-
-    @property
-    def z(self):
-        return self._z
 
 class GRUSimpleStructController(SimpleStructController):
     """
@@ -467,4 +369,297 @@ class GRUSimpleStructController(SimpleStructController):
         self._log(x, torch.sigmoid(output), v, *instructions)
 
         return output, ((v,) + instructions)
+class PDARNNSimpleStructController(SimpleStructController):
+    def __init__(self, input_size, read_size, output_size,
+                 custom_initialization=False,
+                 discourage_pop=False,
+                 hidden_size=16,
+                 n_args=4,
+                 **kwargs):
+        super(PDARNNSimpleStructController, self).__init__(input_size,
+                                                      read_size,
+                                                      output_size,
+                                                      n_args=n_args)
+
+        for param_name, arg_value in kwargs.items():
+            unused_init_param(param_name, arg_value, self)
+
+        self._hidden = None
+        self._cell_state = None
+
+        # Create an RNN Module object
+        nn_input_size = self._input_size + self._read_size
+        nn_output_size = self._n_args + self._read_size * 2 + self._output_size
+        self._rnn = nn.RNNCell(nn_input_size, hidden_size)
+        self._linear_nargs = nn.Linear(hidden_size, self._n_args)
+        self._sigmoid_nargs = nn.Sigmoid()
+        self._linear_v1 = nn.Linear(hidden_size, self._read_size)
+        self._tanh_v1 = nn.Tanh()
+        self._linear_v2 = nn.Linear(hidden_size, self._read_size)
+        self._tanh_v2 = nn.Tanh()
+        self._linear_o = nn.Linear(hidden_size, self._output_size)
+        self._tanh_o = nn.Tanh()
+
+        if custom_initialization:
+            PDARNNSimpleStructController.init_normal(self._rnn.weight_hh)
+            PDARNNSimpleStructController.init_normal(self._rnn.weight_ih)
+            self._rnn.bias_hh.data.fill_(0)
+            self._rnn.bias_ih.data.fill_(0)
+
+            PDARNNSimpleStructController.init_normal(self._linear.weight)
+            self._linear.bias.data.fill_(0)
+
+        if discourage_pop:
+            self._linear.bias.data[0] = -1.  # Discourage popping
+            if n_args >= 4:
+                self._linear.bias.data[2] = 1.  # Encourage reading
+                self._linear.bias.data[3] = 1.  # Encourage writing
+
+    def _init_hidden(self, batch_size):
+        """
+        Initializes the hidden state of the RNN cell to zeros.
+
+        :type batch_size: int
+        :param batch_size: The number of trials in each mini-batch where
+            this Model is used
+
+        :return: None
+        """
+        rnn_hidden_shape = (batch_size, self._rnn.hidden_size)
+        self._hidden = Variable(torch.zeros(rnn_hidden_shape))
+        self._cell_state = Variable(torch.zeros(rnn_hidden_shape))
+
+    def init_controller(self, batch_size):
+        self._init_hidden(batch_size)
+        #self._z = 1.
+
+    def forward(self, x, r):
+        """
+        Computes an output and data structure instructions using a
+        single linear layer.
+
+        :type x: Variable
+        :param x: The input to this Controller
+
+        :type r: Variable
+        :param r: The previous item read from the neural data structure
+
+        :rtype: tuple
+        :return: A tuple of the form (y, (v, u, d)), interpreted as
+            follows:
+                - output y
+                - pop a strength u from the data structure
+                - push v with strength d to the data structure
+        """
+        self._hidden = self._rnn(torch.cat([x, r], 1), self._hidden)
+
+        output = self._tanh_o(self._linear_o(self._hidden))
+        v1 = self._tanh_v1(self._linear_v1(self._hidden))
+        v2 = self._tanh_v2(self._linear_v2(self._hidden))
+        nargs = self._sigmoid_nargs(self._linear_nargs(self._hidden))
+        instructions = tuple(nargs[:, j].contiguous().view(-1, 1) for j in range(self._n_args))
+        # To do
+        self._log(x, output, v1, *instructions)
+        # output, v1, v2, (s1, s2, u, z)
+        return output, v1, v2, instructions
+
+    @property
+    def z(self):
+        return self._z
+class PDALSTMSimpleStructController(SimpleStructController):
+    def __init__(self, input_size, read_size, output_size,
+                 custom_initialization=False,
+                 discourage_pop=False,
+                 hidden_size=16,
+                 n_args=4,
+                 **kwargs):
+        super(PDALSTMSimpleStructController, self).__init__(input_size,
+                                                      read_size,
+                                                      output_size,
+                                                      n_args=n_args)
+
+        for param_name, arg_value in kwargs.items():
+            unused_init_param(param_name, arg_value, self)
+
+        self._hidden = None
+        self._cell_state = None
+
+        # Create an LSTM Module object
+        nn_input_size = self._input_size + self._read_size
+        nn_output_size = self._n_args + self._read_size * 2 + self._output_size
+        self._lstm = nn.LSTMCell(nn_input_size, hidden_size)
+        self._linear_nargs = nn.Linear(hidden_size, self._n_args)
+        self._sigmoid_nargs = nn.Sigmoid()
+        self._linear_v1 = nn.Linear(hidden_size, self._read_size)
+        self._tanh_v1 = nn.Tanh()
+        self._linear_v2 = nn.Linear(hidden_size, self._read_size)
+        self._tanh_v2 = nn.Tanh()
+        self._linear_o = nn.Linear(hidden_size, self._output_size)
+        self._tanh_o = nn.Tanh()
+
+        if custom_initialization:
+            LSTMSimpleStructController.init_normal(self._lstm.weight_hh)
+            LSTMSimpleStructController.init_normal(self._lstm.weight_ih)
+            self._lstm.bias_hh.data.fill_(0)
+            self._lstm.bias_ih.data.fill_(0)
+
+            LSTMSimpleStructController.init_normal(self._linear.weight)
+            self._linear.bias.data.fill_(0)
+
+        if discourage_pop:
+            self._linear.bias.data[0] = -1.  # Discourage popping
+            if n_args >= 4:
+                self._linear.bias.data[2] = 1.  # Encourage reading
+                self._linear.bias.data[3] = 1.  # Encourage writing
+
+    def _init_hidden(self, batch_size):
+        """
+        Initializes the hidden state of the LSTM cell to zeros.
+
+        :type batch_size: int
+        :param batch_size: The number of trials in each mini-batch where
+            this Model is used
+
+        :return: None
+        """
+        lstm_hidden_shape = (batch_size, self._lstm.hidden_size)
+        self._hidden = Variable(torch.zeros(lstm_hidden_shape))
+        self._cell_state = Variable(torch.zeros(lstm_hidden_shape))
+
+    def init_controller(self, batch_size):
+        self._init_hidden(batch_size)
+        #self._z = 1.
+
+    def forward(self, x, r):
+        """
+        Computes an output and data structure instructions using a
+        single linear layer.
+
+        :type x: Variable
+        :param x: The input to this Controller
+
+        :type r: Variable
+        :param r: The previous item read from the neural data structure
+
+        :rtype: tuple
+        :return: A tuple of the form (y, (v, u, d)), interpreted as
+            follows:
+                - output y
+                - pop a strength u from the data structure
+                - push v with strength d to the data structure
+        """
+        self._hidden, self._cell_state = self._lstm(
+            torch.cat([x, r], 1), (self._hidden, self._cell_state))
+
+        output = self._tanh_o(self._linear_o(self._hidden))
+        v1 = self._tanh_v1(self._linear_v1(self._hidden))
+        v2 = self._tanh_v2(self._linear_v2(self._hidden))
+        nargs = self._sigmoid_nargs(self._linear_nargs(self._hidden))
+        instructions = tuple(nargs[:, j].contiguous().view(-1, 1) for j in range(self._n_args))
+        # To do
+        self._log(x, output, v1, *instructions)
+        # output, v1, v2, (s1, s2, u, z)
+        return output, v1, v2, instructions
+
+    @property
+    def z(self):
+        return self._z
+
+class PDAGRUSimpleStructController(SimpleStructController):
+    def __init__(self, input_size, read_size, output_size,
+                 custom_initialization=False,
+                 discourage_pop=False,
+                 hidden_size=16,
+                 n_args=4,
+                 **kwargs):
+        super(PDAGRUSimpleStructController, self).__init__(input_size,
+                                                      read_size,
+                                                      output_size,
+                                                      n_args=n_args)
+
+        for param_name, arg_value in kwargs.items():
+            unused_init_param(param_name, arg_value, self)
+
+        self._hidden = None
+        self._cell_state = None
+
+        # Create an GRU Module object
+        nn_input_size = self._input_size + self._read_size
+        nn_output_size = self._n_args + self._read_size * 2 + self._output_size
+        self._gru = nn.GRUCell(nn_input_size, hidden_size)
+        self._linear_nargs = nn.Linear(hidden_size, self._n_args)
+        self._sigmoid_nargs = nn.Sigmoid()
+        self._linear_v1 = nn.Linear(hidden_size, self._read_size)
+        self._tanh_v1 = nn.Tanh()
+        self._linear_v2 = nn.Linear(hidden_size, self._read_size)
+        self._tanh_v2 = nn.Tanh()
+        self._linear_o = nn.Linear(hidden_size, self._output_size)
+        self._tanh_o = nn.Tanh()
+
+        if custom_initialization:
+            PDAGRUSimpleStructController.init_normal(self._gru.weight_hh)
+            PDAGRUSimpleStructController.init_normal(self._gru.weight_ih)
+            self._gru.bias_hh.data.fill_(0)
+            self._gru.bias_ih.data.fill_(0)
+
+            PDAGRUSimpleStructController.init_normal(self._linear.weight)
+            self._linear.bias.data.fill_(0)
+
+        if discourage_pop:
+            self._linear.bias.data[0] = -1.  # Discourage popping
+            if n_args >= 4:
+                self._linear.bias.data[2] = 1.  # Encourage reading
+                self._linear.bias.data[3] = 1.  # Encourage writing
+
+    def _init_hidden(self, batch_size):
+        """
+        Initializes the hidden state of the GRU cell to zeros.
+
+        :type batch_size: int
+        :param batch_size: The number of trials in each mini-batch where
+            this Model is used
+
+        :return: None
+        """
+        gru_hidden_shape = (batch_size, self._gru.hidden_size)
+        self._hidden = Variable(torch.zeros(gru_hidden_shape))
+        self._cell_state = Variable(torch.zeros(gru_hidden_shape))
+
+    def init_controller(self, batch_size):
+        self._init_hidden(batch_size)
+        #self._z = 1.
+
+    def forward(self, x, r):
+        """
+        Computes an output and data structure instructions using a
+        single linear layer.
+
+        :type x: Variable
+        :param x: The input to this Controller
+
+        :type r: Variable
+        :param r: The previous item read from the neural data structure
+
+        :rtype: tuple
+        :return: A tuple of the form (y, (v, u, d)), interpreted as
+            follows:
+                - output y
+                - pop a strength u from the data structure
+                - push v with strength d to the data structure
+        """
+        self._hidden = self._gru(torch.cat([x, r], 1), self._hidden)
+
+        output = self._tanh_o(self._linear_o(self._hidden))
+        v1 = self._tanh_v1(self._linear_v1(self._hidden))
+        v2 = self._tanh_v2(self._linear_v2(self._hidden))
+        nargs = self._sigmoid_nargs(self._linear_nargs(self._hidden))
+        instructions = tuple(nargs[:, j].contiguous().view(-1, 1) for j in range(self._n_args))
+        # To do
+        self._log(x, output, v1, *instructions)
+        # output, v1, v2, (s1, s2, u, z)
+        return output, v1, v2, instructions
+
+    @property
+    def z(self):
+        return self._z
     
