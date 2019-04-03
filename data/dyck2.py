@@ -4,6 +4,8 @@
 import random
 import pandas
 import numpy as np
+import nltk
+print("numpy imported.")
 class Dyck2:
     '''
     one thing certained is that 's' and 'e' must be contained in. this len1 = 2.

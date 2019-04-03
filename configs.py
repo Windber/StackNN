@@ -48,6 +48,7 @@ final_delayed_parity_config = {
 final_dyck_config = {
     "task": CFGTask,
     "epochs": 100,
+    "cuda": False,
     "early_stopping_steps": 5,
     "grammar": dyck_grammar_2,
     "to_predict": [")", "]"],
@@ -59,7 +60,11 @@ final_dyck_config = {
         "sample_depth": 12,
         "max_length": 110,
         "sentence_count": 1000
-    }
+    },
+    "null": "l",
+    "trd_path": r'C:\Users\lenovo\git\StackNN\data\dyck2_train_30_1024_7_27',
+    "ted_path": r'C:\Users\lenovo\git\StackNN\data\dyck2_test_1022_10_511_990',
+    
 }
 
 # 5) Agreement grammar task.
