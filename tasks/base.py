@@ -124,7 +124,7 @@ class Task(object, metaclass=ABCMeta):
                 warnings.warn("CUDA is not available.")
 
         # Load a saved model if one is specified.
-        if self.params.load_path:
+        if self.params.load and self.params.load_path:
             self.model.load_state_dict(torch.load(self.load_path))
             self._has_trained_model = True
         else:

@@ -214,15 +214,17 @@ class PDATask(Task, metaclass=ABCMeta):
         #size of outputs_tensor: (batch_size, characters, output_size)
         #size of z_tensor: (batch_size, characters, 1)
         #threshod = 0.99 threshold > 1 - 1/(inp)
-        _, nonlambda_output_indices = torch.topk(z_tensor, inp_len, dim=1)
-        nlo_indices = nonlambda_output_indices
-        # bi: index in batch
-        # ci: tensor(1): index of nlo in outputs_tensor
         
-        for bi, sample in enumerate(nlo_indices):
-            # loop for count the original y
+        for bi, sample in enumerate(x):
+            eindex = None
+            for ci, character in enumerate(sample):
+                if character[-1] == 1:
+                    eindex = ci
+            
+            _, nonlambda_output_indices = torch.topk(z_tensor[bi], ci + 1, dim=0)
+            nlo_indices = nonlambda_output_indices
             c_index = 0
-            for ci in sample:
+            for ci in nlo_indices:
                 ot_pred = outputs_tensor[bi, ci[0]].clone().view(1, -1)
                 ot = y[bi, c_index].clone()
                 if sum(x[bi, c_index]) != 0.:
@@ -231,6 +233,22 @@ class PDATask(Task, metaclass=ABCMeta):
                     batch_correct += is_correct
                     batch_total += 1
                 c_index += 1
+        # bi: index in batch
+        # ci: tensor(1): index of nlo in outputs_tensor
+        
+#         for bi, sample in enumerate(nlo_indices):
+#             # loop for count the original y
+#             c_index = 0
+#             for ci in sample:
+#                 ci = 
+#                 ot_pred = outputs_tensor[bi, ci[0]].clone().view(1, -1)
+#                 ot = y[bi, c_index].clone()
+#                 if sum(x[bi, c_index]) != 0.:
+#                     batch_loss += self.loss_func(ot_pred, ot)
+#                     is_correct = 1 if torch.topk(ot_pred, 1)[1][0] == torch.topk(ot, 1)[1][0] else 0
+#                     batch_correct += is_correct
+#                     batch_total += 1
+#                 c_index += 1
         # Regularization
         # pass
         #Update
