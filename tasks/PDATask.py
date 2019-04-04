@@ -182,7 +182,7 @@ class PDATask(Task, metaclass=ABCMeta):
     @timeprofile
     def _evaluate_batch(self, x, y, name, is_batch):
         # size of x: (batch_size, characters, input_size/embedding_size)
-        # size of y: (batch_size, characters, output_size)
+        # size of y: (batch_size, 1)
         batch_size = x.size()[0]
         #start_time = time.time()
         batch_loss = torch.zeros(1)
@@ -216,53 +216,30 @@ class PDATask(Task, metaclass=ABCMeta):
         #size of outputs_tensor: (batch_size, characters, output_size)
         #size of z_tensor: (batch_size, characters, 1)
         #threshod = 0.99 threshold > 1 - 1/(inp)
-        if self.params.model == "manytoone":
-            for bi, sample in enumerate(x):
-                eindex = None
-                for ci, character in enumerate(sample):
-                    if character[-1] == 1:
-                        eindex = ci
-                if eindex:
-                    _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
-                    c_index = eindex
-                else:
-                    print("eindex error")
-                nlo_indices = nonlambda_output_indices
-                ci = nlo_indices[-1].item()
-                ot_pred = outputs_tensor[bi, ci].view(1, -1)
-                ot = y[bi, c_index]
-                #if sum(x[bi, c_index]) != 0.:
-                batch_loss += self.loss_func(ot_pred, ot)
-                cpred = torch.topk(ot_pred, 1)[1][0][0].item()
-                c = torch.topk(ot, 1)[0][0].item()
-                is_correct = 1 if c == cpred else 0
-                self.probe += cpred
-                batch_correct += is_correct
-                batch_total += 1
-                c_index += 1      
-        else:
-            for bi, sample in enumerate(x):
-                eindex = None
-                for ci, character in enumerate(sample):
-                    if character[-1] == 1:
-                        eindex = ci
-                
+        for bi, sample in enumerate(x):
+            eindex = None
+            for ci, character in enumerate(sample):
+                if character[-1] == 1:
+                    eindex = ci
+            if eindex:
                 _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
-                nlo_indices = nonlambda_output_indices
-                c_index = 0
-                for ci in nlo_indices:
-                    ot_pred = outputs_tensor[bi, ci[0]].view(1, -1)
-                    ot = y[bi, c_index]
-                    #if sum(x[bi, c_index]) != 0.:
-                    batch_loss += self.loss_func(ot_pred, ot)
-                    cpred = torch.topk(ot_pred, 1)[1][0][0].item()
-                    c = torch.topk(ot, 1)[0][0].item()
-                    is_correct = 1 if  c == cpred  else 0
-                    self.probe += cpred
-                    batch_correct += is_correct
-                    batch_total += 1
-                    c_index += 1
-        
+                #c_index = eindex
+            else:
+                print("eindex error")
+            nlo_indices = nonlambda_output_indices
+            ci = nlo_indices[-1].item()
+            ot_pred = outputs_tensor[bi, ci].view(1, -1)
+            ot = y[bi]
+            #if sum(x[bi, c_index]) != 0.:
+            batch_loss += self.loss_func(ot_pred, ot)
+            cpred = torch.topk(ot_pred, 1)[1][0][0].item()
+            c = ot[0].item()
+            is_correct = 1 if c == cpred else 0
+            self.probe += cpred
+            batch_correct += is_correct
+            batch_total += 1
+            #c_index += 1      
+ 
         if is_batch:
             self.optimizer.zero_grad()
             batch_loss.backward()
@@ -336,8 +313,8 @@ class PDACFGTask(PDATask):
             ')': [0, 0, 0, 0 ,1, 0],
             '#': [0, 0, 0, 0 ,0, 0],
             }
-        DO = {False: [0], 
-              True: [1],
+        DO = {False: 0, 
+              True: 1,
               }
         trd_path = self.trd_path
         ted_path = self.ted_path
@@ -349,24 +326,26 @@ class PDACFGTask(PDATask):
         ted_y = ted.iloc[:, 1]
         
         trd_x1 = [list(s) for s in list(trd_x)]
-        trd_y1 = [list(s) for s in list(trd_y)]
+        trd_y1 = [DO[i] for i in list(trd_y)]
         ted_x1 = [list(s) for s in list(ted_x)]
-        ted_y1 = [list(s) for s in list(ted_y)]
+        ted_y1 = [DO[i] for i in list(ted_y)]
     
         for i, s in enumerate(trd_x1):
             for j, c in enumerate(s):
                 trd_x1[i][j] = D[c]
         self.train_x = torch.Tensor(trd_x1)
-        for i, s in enumerate(trd_y1):
-            for j, c in enumerate(s):
-                trd_y1[i][j] = DO[c]
-        self.train_y = torch.Tensor(trd_y1).long()
+#         for i, s in enumerate(trd_y1):
+#             for j, c in enumerate(s):
+#                 trd_y1[i][j] = DO[c]
+#         self.train_y = torch.Tensor(trd_y1).long()
+        self.train_y = torch.Tensor(trd_y1).view(-1, 1).long()
         for i, s in enumerate(ted_x1):
             for j, c in enumerate(s):
                 ted_x1[i][j] = D[c]
         self.test_x = torch.Tensor(ted_x1)
-        for i, s in enumerate(ted_y1):
-            for j, c in enumerate(s):
-                ted_y1[i][j] = DO[c]
-        self.test_y = torch.Tensor(ted_y1).long()
+#         for i, s in enumerate(ted_y1):
+#             for j, c in enumerate(s):
+#                 ted_y1[i][j] = DO[c]
+#         self.test_y = torch.Tensor(ted_y1).long()
+        self.test_y = torch.Tensor(ted_y1).view(-1, 1).long()
         
