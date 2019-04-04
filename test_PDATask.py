@@ -34,14 +34,14 @@ config_dict['input_size'] = 6
 config_dict['output_size'] = 2
 config_dict['leafting_norm'] = 0.2
 config_dict['custom_initialization'] = False
-config_dict['trd_path'] = r'C:\Users\lenovo\git\StackNN\data\dyck2_train_30_1024_6_27'
-config_dict['ted_path'] = r'C:\Users\lenovo\git\StackNN\data\dyck2_test_510_512_12_345'
+config_dict['trd_path'] = r'C:\Users\lenovo\eclipse-workspace\rnnre\data\train_32_8_16000'
+config_dict['ted_path'] = r'C:\Users\lenovo\eclipse-workspace\rnnre\data\test_32_8_1000'
 config_dict['save_path'] = r'C:\Users\lenovo\git\StackNN\savedmodel\the best_RNN_model'
 config_dict['load_path'] = r'C:\Users\lenovo\git\StackNN\savedmodel\the best_RNN_model@03_15_56'
 config_dict["load"] = False
 config_dict['cross_validation'] = False
 config_dict['kfold'] = 10
-config_dict['model'] = "manytomany"
+config_dict['model'] = "manytoone"
 pct = PDACFGTask.from_config_dict(config_dict)
 if not pct._has_trained_model:
     acc = pct.run_experiment()

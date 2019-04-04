@@ -332,19 +332,19 @@ class PDACFGTask(PDATask):
             'e': [0, 0, 0, 0 ,0, 1],
             '[': [0, 1, 0, 0 ,0, 0],
             ']': [0, 0, 1, 0 ,0, 0],
-            '{': [0, 0, 0, 1 ,0, 0],
-            '}': [0, 0, 0, 0 ,1, 0],
-            'l': [0, 0, 0, 0 ,0, 0],
+            '(': [0, 0, 0, 1 ,0, 0],
+            ')': [0, 0, 0, 0 ,1, 0],
+            '#': [0, 0, 0, 0 ,0, 0],
             }
-        DO = {'0': [0], 
-              '1': [1],
+        DO = {False: [0], 
+              True: [1],
               }
         trd_path = self.trd_path
         ted_path = self.ted_path
-        trd = pd.read_csv(trd_path, header=None, dtype={0: str, 1: str})
+        trd = pd.read_csv(trd_path, header=None, dtype={0: str, 1: bool})
         trd_x = trd.iloc[:, 0]
         trd_y = trd.iloc[:, 1]
-        ted = pd.read_csv(ted_path, header=None, dtype={0: str, 1: str})
+        ted = pd.read_csv(ted_path, header=None, dtype={0: str, 1: bool})
         ted_x = ted.iloc[:, 0]
         ted_y = ted.iloc[:, 1]
         
