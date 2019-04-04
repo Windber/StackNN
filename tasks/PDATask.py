@@ -216,52 +216,27 @@ class PDATask(Task, metaclass=ABCMeta):
         #size of outputs_tensor: (batch_size, characters, output_size)
         #size of z_tensor: (batch_size, characters, 1)
         #threshod = 0.99 threshold > 1 - 1/(inp)
-        if self.params.model == "manytoone":
-            for bi, sample in enumerate(x):
-                eindex = None
-                for ci, character in enumerate(sample):
-                    if character[-1] == 1:
-                        eindex = ci
-                if eindex:
-                    _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
-                    c_index = eindex
-                else:
-                    print("eindex error")
-                nlo_indices = nonlambda_output_indices
-                ci = nlo_indices[-1].item()
-                ot_pred = outputs_tensor[bi, ci].view(1, -1)
+        for bi, sample in enumerate(x):
+            eindex = None
+            for ci, character in enumerate(sample):
+                if character[-1] == 1:
+                    eindex = ci
+            
+            _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
+            nlo_indices = nonlambda_output_indices
+            c_index = 0
+            for ci in nlo_indices:
+                ot_pred = outputs_tensor[bi, ci[0]].view(1, -1)
                 ot = y[bi, c_index]
                 #if sum(x[bi, c_index]) != 0.:
                 batch_loss += self.loss_func(ot_pred, ot)
                 cpred = torch.topk(ot_pred, 1)[1][0][0].item()
                 c = torch.topk(ot, 1)[0][0].item()
-                is_correct = 1 if c == cpred else 0
+                is_correct = 1 if  c == cpred  else 0
                 self.probe += cpred
                 batch_correct += is_correct
                 batch_total += 1
-                c_index += 1      
-        else:
-            for bi, sample in enumerate(x):
-                eindex = None
-                for ci, character in enumerate(sample):
-                    if character[-1] == 1:
-                        eindex = ci
-                
-                _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
-                nlo_indices = nonlambda_output_indices
-                c_index = 0
-                for ci in nlo_indices:
-                    ot_pred = outputs_tensor[bi, ci[0]].view(1, -1)
-                    ot = y[bi, c_index]
-                    #if sum(x[bi, c_index]) != 0.:
-                    batch_loss += self.loss_func(ot_pred, ot)
-                    cpred = torch.topk(ot_pred, 1)[1][0][0].item()
-                    c = torch.topk(ot, 1)[0][0].item()
-                    is_correct = 1 if  c == cpred  else 0
-                    self.probe += cpred
-                    batch_correct += is_correct
-                    batch_total += 1
-                    c_index += 1
+                c_index += 1
         
         if is_batch:
             self.optimizer.zero_grad()
