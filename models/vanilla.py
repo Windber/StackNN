@@ -9,7 +9,7 @@ from controllers.feedforward import LinearSimpleStructController
 from stacknn_utils.errors import unused_init_param
 from structs.simple import Stack, PDAStack, PDAQueue
 from structs.base import PDAStruct
-
+from stacknn_utils.profile import timeprofile
 
 class PDAVanillaModel(Model):
 
@@ -71,6 +71,7 @@ class PDAVanillaModel(Model):
     def _init_controller(self, batch_size):
         self._controller.init_controller(batch_size)
         #self._z = self._controller.z
+    @timeprofile
     def forward(self, inp=None):
         if self.read is None:
             raise RuntimeError("The data structure has not been initialized.")

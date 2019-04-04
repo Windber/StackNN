@@ -25,22 +25,23 @@ config_dict['batch_size'] = 8
 config_dict['clipping_norm'] = None
 config_dict['lifting_norm'] = None
 config_dict['cuda'] = False
-config_dict['epochs'] = 10
+config_dict['epochs'] = 3
 config_dict['hidden_size'] = 8
-config_dict['learning_rate'] = 0.001
+config_dict['learning_rate'] = 0.01
 config_dict['read_size'] = 2
 config_dict['task'] = PDACFGTask
 config_dict['input_size'] = 6
 config_dict['output_size'] = 2
 config_dict['leafting_norm'] = 0.2
 config_dict['custom_initialization'] = False
-config_dict['trd_path'] = r'C:\Users\lenovo\git\StackNN\data\dyck2_train_30_1024_7_27'
-config_dict['ted_path'] = r'C:\Users\lenovo\git\StackNN\data\dyck2_test_250_1000_10_176'
+config_dict['trd_path'] = r'C:\Users\lenovo\git\StackNN\data\dyck2_train_30_1024_6_27'
+config_dict['ted_path'] = r'C:\Users\lenovo\git\StackNN\data\dyck2_test_510_512_12_345'
 config_dict['save_path'] = r'C:\Users\lenovo\git\StackNN\savedmodel\the best_RNN_model'
-config_dict['load_path'] = r'C:\Users\lenovo\git\StackNN\savedmodel\the best_RNN_model@02_00_35'
+config_dict['load_path'] = r'C:\Users\lenovo\git\StackNN\savedmodel\the best_RNN_model@03_15_56'
 config_dict["load"] = False
 config_dict['cross_validation'] = False
 config_dict['kfold'] = 10
+config_dict['model'] = "manytomany"
 pct = PDACFGTask.from_config_dict(config_dict)
 if not pct._has_trained_model:
     acc = pct.run_experiment()
@@ -48,3 +49,4 @@ if not pct._has_trained_model:
 else:
     pct.get_data() 
 pct.test()
+print(pct.probe)

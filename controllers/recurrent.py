@@ -10,7 +10,7 @@ from torch.autograd import Variable
 from .base import SimpleStructController
 #from base import SimpleStructController
 from stacknn_utils.errors import unused_init_param
-
+from stacknn_utils.profile import timeprofile
 
 class RNNSimpleStructController(SimpleStructController):
     """
@@ -432,7 +432,7 @@ class PDARNNSimpleStructController(SimpleStructController):
     def init_controller(self, batch_size):
         self._init_hidden(batch_size)
         #self._z = 1.
-
+    @timeprofile
     def forward(self, x, r):
         """
         Computes an output and data structure instructions using a

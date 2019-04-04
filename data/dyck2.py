@@ -4,8 +4,6 @@
 import random
 import pandas
 import numpy as np
-import nltk
-print("numpy imported.")
 class Dyck2:
     '''
     one thing certained is that 's' and 'e' must be contained in. this len1 = 2.
@@ -14,18 +12,18 @@ class Dyck2:
     'e' is different with lambda(None) [1, 0, ..., 0] vs. [0, ... , 0]
     
     '''
-    def padding_s(self, orign_s, length=16):
+    def padding_s(self, orign_s, length):
         alen = len(orign_s)
         need_pad = length - alen
         pad_s = 's' + orign_s + 'e' + 'l' * need_pad
         return pad_s
-    def padding_l(self, orign_l, length=16):
+    def padding_l(self, orign_l, length):
         alen = len(orign_l)
         need_pad = length - alen
         if alen == 0:
-            pad_l = '0' + '' + '1' + '1' * need_pad
+            pad_l = '1' + '' + '1' + '1' * need_pad
         else:
-            pad_l = '0' + orign_l + orign_l[-1] + orign_l[-1] * need_pad
+            pad_l = '1' + orign_l + orign_l[-1] + orign_l[-1] * need_pad
         return pad_l
     def positive(self, length, variant):
         if variant:
@@ -55,7 +53,7 @@ class Dyck2:
         sr = "".join([RD[i] for i in lr])
         s = sl + sr
         return s
-    def label_output(self, s, check=True):
+    def label_output(self, s, check):
         depth = 0
         stack = list()
         sl = list(s)
@@ -78,51 +76,69 @@ class Dyck2:
             return (True if output[-1] == '1' else False, depth)
         else:
             return (''.join(output), depth)
-    def negative(self, length):
+    def negative(self, length, variant):
         alen = 0
         while alen == 0:
-            ps = self.positive_deepdepth(length, False)
+            ps = self.positive(length, variant)
             alen = len(ps)
         
         sl = list(ps)
-        while self.label_output(''.join(sl))[0]:
+        while self.label_output(''.join(sl), True)[0]:
             rs = random.randint(0, alen-1)
             re = random.randint(rs, alen)
             ss = sl[rs: re]
             random.shuffle(ss)
             sl[rs: re] = ss
         return ''.join(sl)
-
+def mm_ct_mo():
+    trd_path = r'C:\Users\lenovo\git\StackNN\data\dyck2_train_30_1024_6_27'
+    od = pd.read_csv(trd_path, header=None, dtype={0: str, 1:str})
+    nl = list()
+    length = len(od)
+    slength = len(od.iloc[0, 0])
+    print(length)
+    for i in range(length):
+        tmpl = od.iloc[i, :].tolist()
+        eindex = tmpl[0].find("e")
+        content = eindex + 1 - 2
+        for j in range(content):
+            tmp = (tmpl[0][:j+1] + "e" + "l" * (slength - 2 - j), tmpl[1][:j+1] + tmpl[1][j] * (slength - j - 1), True if tmpl[1][j] == "1" else False)
+            nl.append(tmp)
+    nl.append(("se" + "l" * (slength - 2), "1" * slength, True))
+    print(len(nl))
+    nl = list(set(nl))
+    print(len(nl))
+    newl = pd.DataFrame(nl)
+    newl.to_csv(r'C:\Users\lenovo\git\StackNN\data\dyck2_train_30_1024_6_27formanytoone', header=None, index=None)
 if __name__ == "__main__":
     # want unrepeat
     # variant(train) or in-variant(test)
     # deep
     
     D = Dyck2()
-    len2 = 1022
+    len2 = 510
     len1 = 2
     actual_len = len1 + len2
-    numbers = 10
+    numbers = 512
     purpose = "test"
     depth_p = 0
     depth_n = 0
+    variant = False if purpose == "test" else True
     sl = set()
     while len(sl) < numbers:
         ll = list()
         for i in range(numbers // 2):
-            s = D.positive_deepdepth(len2, False)
+            s = D.positive(len2, variant)
             s_label, depth_t= D.label_output(s, False)
-            tmp = (D.padding_s(s, length=len2), D.padding_l(s_label, length=len2), True)
+            tmp = (D.padding_s(s, len2), D.padding_l(s_label, len2), True)
             ll.append(tmp)
             depth_p = max(depth_p, depth_t)
         for i in range(numbers // 2):
-            s = D.negative(len2)
+            s = D.negative(len2, variant)
             s_label, depth_t = D.label_output(s, False)
-            tmp = (D.padding_s(s, length=len2), D.padding_l(s_label, length=len2), False)
+            tmp = (D.padding_s(s, len2), D.padding_l(s_label, len2), False)
             ll.append(tmp)
             depth_n = max(depth_n, depth_t)
-        #ld_shuffled = pandas.DataFrame(sklearn.utils.shuffle(ll))
-        #ld_shuffled.to_csv('dyck2_train1minix10', header=False, index=False)
         sl1 = set(ll)
         sl = sl.union(sl1)
     while len(sl) > numbers:

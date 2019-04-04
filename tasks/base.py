@@ -85,6 +85,7 @@ class Task(object, metaclass=ABCMeta):
             self.load_path = kwargs.get("load_path", None)
             self.save_path = kwargs.get("save_path", None)
             self.test_override = kwargs.get("test_override", dict())
+            self.load = kwargs.get("load", False)
 
 
         def __iter__(self):

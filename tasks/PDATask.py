@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
-
+from stacknn_utils.profile import timeprofile
 from models.vanilla import PDAVanillaModel
 from controllers.recurrent import PDALSTMSimpleStructController, PDAGRUSimpleStructController, PDARNNSimpleStructController
 from stacknn_utils import *
@@ -61,6 +61,7 @@ class PDATask(Task, metaclass=ABCMeta):
             self.ted_path = kwargs.get("ted_path", None)
             self.cross_validation = kwargs.get("cross_validation", False)
             self.kfold = kwargs.get("kfold", 10)
+            self.model = kwargs.get("model", "manytoone")
             #del kwargs["input_size"]
             #del kwargs["output_size"]
             #del kwargs["leafting_norm"]
@@ -68,7 +69,7 @@ class PDATask(Task, metaclass=ABCMeta):
     def __init__(self, params):
         super(PDATask, self).__init__(params)
         self.loss_func = torch.nn.CrossEntropyLoss(reduction='sum')
-
+        self.probe = 0
     def _init_model(self):
         # TODO: Should initialize controller/task here and pass it in.
         return self.params.model_type(self.params.input_size,
@@ -178,11 +179,12 @@ class PDATask(Task, metaclass=ABCMeta):
 
             self.model.init_model(self.batch_size)
             self._evaluate_batch(x, y, batch, True)
+    @timeprofile
     def _evaluate_batch(self, x, y, name, is_batch):
         # size of x: (batch_size, characters, input_size/embedding_size)
         # size of y: (batch_size, characters, output_size)
         batch_size = x.size()[0]
-        start_time = time.time()
+        #start_time = time.time()
         batch_loss = torch.zeros(1)
         batch_correct = 0
         batch_total = 0
@@ -210,48 +212,57 @@ class PDATask(Task, metaclass=ABCMeta):
                                         1)
             outputs_tensor[:, feed_count, :] = output[:, :].clone()
             feed_count += 1
-        print("Batch %d Forward computation completed." % (name), end='    ')
+        #print("Batch %d Forward computation completed." % (name), end='    ')
         #size of outputs_tensor: (batch_size, characters, output_size)
         #size of z_tensor: (batch_size, characters, 1)
         #threshod = 0.99 threshold > 1 - 1/(inp)
-        
-        for bi, sample in enumerate(x):
-            eindex = None
-            for ci, character in enumerate(sample):
-                if character[-1] == 1:
-                    eindex = ci
-            
-            _, nonlambda_output_indices = torch.topk(z_tensor[bi], ci + 1, dim=0)
-            nlo_indices = nonlambda_output_indices
-            c_index = 0
-            for ci in nlo_indices:
-                ot_pred = outputs_tensor[bi, ci[0]].clone().view(1, -1)
-                ot = y[bi, c_index].clone()
-                if sum(x[bi, c_index]) != 0.:
+        if self.params.model == "manytoone":
+            for bi, sample in enumerate(x):
+                eindex = None
+                for ci, character in enumerate(sample):
+                    if character[-1] == 1:
+                        eindex = ci
+                if eindex:
+                    _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
+                    c_index = eindex
+                else:
+                    print("eindex error")
+                nlo_indices = nonlambda_output_indices
+                ci = nlo_indices[-1].item()
+                ot_pred = outputs_tensor[bi, ci].view(1, -1)
+                ot = y[bi, c_index]
+                #if sum(x[bi, c_index]) != 0.:
+                batch_loss += self.loss_func(ot_pred, ot)
+                cpred = torch.topk(ot_pred, 1)[1][0][0].item()
+                c = torch.topk(ot, 1)[0][0].item()
+                is_correct = 1 if c == cpred else 0
+                self.probe += cpred
+                batch_correct += is_correct
+                batch_total += 1
+                c_index += 1      
+        else:
+            for bi, sample in enumerate(x):
+                eindex = None
+                for ci, character in enumerate(sample):
+                    if character[-1] == 1:
+                        eindex = ci
+                
+                _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
+                nlo_indices = nonlambda_output_indices
+                c_index = 0
+                for ci in nlo_indices:
+                    ot_pred = outputs_tensor[bi, ci[0]].view(1, -1)
+                    ot = y[bi, c_index]
+                    #if sum(x[bi, c_index]) != 0.:
                     batch_loss += self.loss_func(ot_pred, ot)
-                    is_correct = 1 if torch.topk(ot_pred, 1)[1][0] == torch.topk(ot, 1)[1][0] else 0
+                    cpred = torch.topk(ot_pred, 1)[1][0][0].item()
+                    c = torch.topk(ot, 1)[0][0].item()
+                    is_correct = 1 if  c == cpred  else 0
+                    self.probe += cpred
                     batch_correct += is_correct
                     batch_total += 1
-                c_index += 1
-        # bi: index in batch
-        # ci: tensor(1): index of nlo in outputs_tensor
+                    c_index += 1
         
-#         for bi, sample in enumerate(nlo_indices):
-#             # loop for count the original y
-#             c_index = 0
-#             for ci in sample:
-#                 ci = 
-#                 ot_pred = outputs_tensor[bi, ci[0]].clone().view(1, -1)
-#                 ot = y[bi, c_index].clone()
-#                 if sum(x[bi, c_index]) != 0.:
-#                     batch_loss += self.loss_func(ot_pred, ot)
-#                     is_correct = 1 if torch.topk(ot_pred, 1)[1][0] == torch.topk(ot, 1)[1][0] else 0
-#                     batch_correct += is_correct
-#                     batch_total += 1
-#                 c_index += 1
-        # Regularization
-        # pass
-        #Update
         if is_batch:
             self.optimizer.zero_grad()
             batch_loss.backward()
@@ -260,8 +271,8 @@ class PDATask(Task, metaclass=ABCMeta):
                 nn.utils.clip_grad_norm(self.model.parameters(),
                                         self.clipping_norm)
             self.optimizer.step()
-            consume_time = time.time() - start_time
-            print("Backard computation completed. Total consumed: %ds" % (consume_time))
+            #consume_time = time.time() - start_time
+            #print("Backard computation completed. Total consumed: %ds" % (consume_time))
         # Log the results.
         self._print_batch_summary(name, is_batch, batch_loss / batch_total, batch_correct,
                                   batch_total)
