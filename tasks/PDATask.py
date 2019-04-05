@@ -323,7 +323,7 @@ class PDACFGTask(PDATask):
         trd_y1 = [list(s) for s in list(trd_y)]
         ted_x1 = [list(s) for s in list(ted_x)]
         ted_y1 = [list(s) for s in list(ted_y)]
-    
+
         for i, s in enumerate(trd_x1):
             for j, c in enumerate(s):
                 trd_x1[i][j] = D[c]
