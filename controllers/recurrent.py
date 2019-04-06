@@ -11,6 +11,7 @@ from .base import SimpleStructController
 #from base import SimpleStructController
 from stacknn_utils.errors import unused_init_param
 from stacknn_utils.profile import timeprofile
+from autograd.sigmaid import Sigmaid
 
 class RNNSimpleStructController(SimpleStructController):
     """
@@ -392,7 +393,8 @@ class PDARNNSimpleStructController(SimpleStructController):
         nn_output_size = self._n_args + self._read_size * 2 + self._output_size
         self._rnn = nn.RNNCell(nn_input_size, hidden_size)
         self._linear_nargs = nn.Linear(hidden_size, self._n_args)
-        self._sigmoid_nargs = nn.Sigmoid()
+        self._sigmoid_nargs = Sigmaid.apply
+        #self._sigmoid_nargs = nn.Sigmoid()
         self._linear_v1 = nn.Linear(hidden_size, self._read_size)
         self._tanh_v1 = nn.Tanh()
         self._linear_v2 = nn.Linear(hidden_size, self._read_size)
