@@ -2,7 +2,7 @@
 @author: lenovo
 '''
 import torch
-a = 100
+a = 50
 mingrad = 0.01
 maxgrad = 0.25
  

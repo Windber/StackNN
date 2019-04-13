@@ -243,6 +243,7 @@ class PDATask(Task, metaclass=ABCMeta):
                     batch_total += 1
                     c_index += 1
                 batch_loss += 0.01 * self.stacklength_lf(self.model._struct._actual[bi], torch.zeros(1))
+            batch_loss += 0.01 * self.stacklength_lf(self.model._buffer_in._actual[bi], torch.zeros(1))
         if batch_loss.requires_grad:    
             if is_batch:
                 self.optimizer.zero_grad()
@@ -255,11 +256,12 @@ class PDATask(Task, metaclass=ABCMeta):
                 #consume_time = time.time() - start_time
                 #print("Backard computation completed. Total consumed: %ds" % (consume_time))
             # Log the results.
-            self._print_batch_summary(name, is_batch, batch_loss / batch_total, batch_correct,
-                                      batch_total)
-    
-            # Make the accuracy accessible for early stopping.
-            self.batch_acc = batch_correct / batch_total
+            if batch_total != 0:
+                self._print_batch_summary(name, is_batch, batch_loss / batch_total, batch_correct,
+                                          batch_total)
+        
+                # Make the accuracy accessible for early stopping.
+                self.batch_acc = batch_correct / batch_total
         return batch_total, batch_correct
         
         #print("Bacth %s: cosume %ds actual %d steps average %f s/step" % (name, consume_time, feed_count, consume_time/feed_count))
