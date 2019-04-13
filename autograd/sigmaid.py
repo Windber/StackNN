@@ -2,25 +2,20 @@
 @author: lenovo
 '''
 import torch
-a = 20
-mingrad = 1.
-class Sigmaid(torch.torch.autograd.Function):
+a = 100
+mingrad = 0.1
+maxgrad = 0.25
+ 
+class Sigmaid(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input):
-        print("in sigmaid forward")
         output = 1 / ( 1 + torch.exp(-a * input))
+        #output = input.clamp(min=0)
         ctx.save_for_backward(output)
-        print("out sigmaid forward")
         return output
-    
+      
     @staticmethod
     def backward(ctx, grad_output):
-        print("in sigmaid backward")
-        input, = ctx.saved_tensors
-        grad_input = grad_output.clone()
-        grad_input[input < 0] = 0
-        print("out sigmaid backward")
-        return grad_input
-#         output, = ctx.saved_tensors
-#         grad_input = grad_output.clone()
-#         return gr ad_input
+        output, = ctx.saved_tensors
+        grad = a * output * (1 - output)
+        return torch.clamp(grad, mingrad, maxgrad) * grad_output

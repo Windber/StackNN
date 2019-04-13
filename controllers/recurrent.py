@@ -12,7 +12,8 @@ from .base import SimpleStructController
 from stacknn_utils.errors import unused_init_param
 from stacknn_utils.profile import timeprofile
 from autograd.sigmaid import Sigmaid
-
+from torch.nn import Sigmoid
+#Sigmaid = Sigmoid
 class RNNSimpleStructController(SimpleStructController):
     """
     An RNN producing instructions compatible with SimpleStructs (see
@@ -394,7 +395,7 @@ class PDARNNSimpleStructController(SimpleStructController):
         self._rnn = nn.RNNCell(nn_input_size, hidden_size)
         self._linear_nargs = nn.Linear(hidden_size, self._n_args)
         self._sigmoid_nargs = Sigmaid.apply
-        #self._sigmoid_nargs = nn.Sigmoid()
+        #self._sigmoid_nargs = Sigmaid()
         self._linear_v1 = nn.Linear(hidden_size, self._read_size)
         self._tanh_v1 = nn.Tanh()
         self._linear_v2 = nn.Linear(hidden_size, self._read_size)
