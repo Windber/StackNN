@@ -3,7 +3,7 @@
 '''
 import torch
 a = 100
-mingrad = 0.1
+mingrad = 0.01
 maxgrad = 0.25
  
 class Sigmaid(torch.autograd.Function):

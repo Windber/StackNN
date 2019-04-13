@@ -42,6 +42,7 @@ config_dict["load"] = False
 config_dict['cross_validation'] = False
 config_dict['kfold'] = 10
 config_dict['model'] = "manytomany"
+config_dict['clampstep'] = 64
 pct = PDACFGTask.from_config_dict(config_dict)
 if not pct._has_trained_model:
     acc = pct.run_experiment()
