@@ -591,7 +591,8 @@ class PDAGRUSimpleStructController(SimpleStructController):
         nn_output_size = self._n_args + self._read_size * 2 + self._output_size
         self._gru = nn.GRUCell(nn_input_size, hidden_size)
         self._linear_nargs = nn.Linear(hidden_size, self._n_args)
-        self._sigmoid_nargs = nn.Sigmoid()
+        #self._sigmoid_nargs = nn.Sigmoid()
+        self._sigmoid_nargs = Sigmaid.apply
         self._linear_v1 = nn.Linear(hidden_size, self._read_size)
         self._tanh_v1 = nn.Tanh()
         self._linear_v2 = nn.Linear(hidden_size, self._read_size)

@@ -19,7 +19,7 @@ batch_size 10
 '''
 config_dict = dict()
 config_dict['model_type'] = PDAVanillaModel
-config_dict['controller_type'] = PDARNNSimpleStructController
+config_dict['controller_type'] = PDAGRUSimpleStructController
 config_dict['struct_type'] = PDAStack
 config_dict['batch_size'] = 8
 config_dict['clipping_norm'] = 10
