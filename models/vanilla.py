@@ -24,6 +24,7 @@ class PDAVanillaModel(Model):
         
         self._read = None
         self._z = None
+        self._zo = None
 
         self._u = None
         self._s1 = None
@@ -34,7 +35,7 @@ class PDAVanillaModel(Model):
         self._controller = self._controller_type(input_size, read_size, output_size, **kwargs)
         self._struct = self._struct_type(self._read_size)
         self._buffer_in = PDAQueue(self._input_size)
-
+        self._buffer_out = PDAQueue(self._output_size)
         self._t = 0
         self._zeros = None
 
@@ -91,6 +92,7 @@ class PDAVanillaModel(Model):
         # output, v1, v2, (s1, s2, u, z)
         o, self._v1, self._v2, (self._s1, self._z)= self._controller(inp_real, self.read)
         self._s2 = self._s1.clone()
+        self._zo = self._z.clone()
         self._u = torch.ones(self.batch_size, 1)
         self.read = self._struct(self._u, self._s1, self._s2, self._v1, self._v2)
         return o

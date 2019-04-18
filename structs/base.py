@@ -12,7 +12,6 @@ class PDAStruct(nn.Module, metaclass=ABCMeta):
         self.contents = Variable(torch.FloatTensor(0))
         self.strengths = Variable(torch.FloatTensor(0))
         #self._readcontent = None
-    @timeprofile
     def forward(self, u, d1, d2, v1, v2, r=None):
         self.push(d1, d2, v1, v2)
         readcontent = self.read(u)
