@@ -19,10 +19,11 @@ batch_size 10
 '''
 config_dict = dict()
 config_dict['model_type'] = PDAVanillaModel
-config_dict['controller_type'] = PDARNNSimpleStructController
+config_dict['controller_type'] = PDAGRUSimpleStructController
 config_dict['struct_type'] = PDAStack
-config_dict['batch_size'] = 200
-config_dict['clipping_norm'] = None
+config_dict['batch_size'] = 8
+config_dict['clipping_norm'] = 10
+config_dict['leafting_norm'] = 0.02
 config_dict['lifting_norm'] = None
 config_dict['cuda'] = False
 config_dict['epochs'] = 10
@@ -32,7 +33,6 @@ config_dict['read_size'] = 2
 config_dict['task'] = PDACFGTask
 config_dict['input_size'] = 6
 config_dict['output_size'] = 2
-config_dict['leafting_norm'] = 0.02
 config_dict['custom_initialization'] = False
 config_dict['trd_path'] = r'./data/train_32_8_16000'
 config_dict['ted_path'] = r'./data/test_32_8_1000'
@@ -42,6 +42,7 @@ config_dict["load"] = False
 config_dict['cross_validation'] = False
 config_dict['kfold'] = 10
 config_dict['model'] = "manytomany"
+config_dict['clampstep'] = 64
 pct = PDACFGTask.from_config_dict(config_dict)
 if not pct._has_trained_model:
     acc = pct.run_experiment()
