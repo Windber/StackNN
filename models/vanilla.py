@@ -89,7 +89,9 @@ class PDAVanillaModel(Model):
         
         inp_real = self._buffer_in(self.z, input_strength, Variable(torch.zeros(self.batch_size, 1)), inp, Variable(torch.zeros(self.batch_size, self._input_size))) 
         # output, v1, v2, (s1, s2, u, z)
-        o, self._v1, self._v2, (self._s1, self._s2, self._u, self._z)= self._controller(inp_real, self.read)
+        o, self._v1, self._v2, (self._s1, self._z)= self._controller(inp_real, self.read)
+        self._s2 = self._s1.clone()
+        self._u = torch.ones(self.batch_size, 1)
         self.read = self._struct(self._u, self._s1, self._s2, self._v1, self._v2)
         return o
 

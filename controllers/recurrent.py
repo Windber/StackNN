@@ -573,7 +573,7 @@ class PDAGRUSimpleStructController(SimpleStructController):
                  custom_initialization=False,
                  discourage_pop=False,
                  hidden_size=16,
-                 n_args=4,
+                 n_args=2,
                  **kwargs):
         super(PDAGRUSimpleStructController, self).__init__(input_size,
                                                       read_size,

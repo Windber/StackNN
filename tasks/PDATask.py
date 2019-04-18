@@ -242,7 +242,8 @@ class PDATask(Task, metaclass=ABCMeta):
                     batch_correct += is_correct
                     batch_total += 1
                     c_index += 1
-                batch_loss += 0.001 * self.stacklength_lf(self.model._struct._actual[bi], torch.zeros(1))
+                if y[bi, -1].item() == 1:
+                    batch_loss += 0.001 * self.stacklength_lf(self.model._struct._actual[bi], torch.zeros(1))
             batch_loss += 0.001 * self.stacklength_lf(self.model._buffer_in._actual[bi], torch.zeros(1))
         if batch_loss.requires_grad:    
             if is_batch:
