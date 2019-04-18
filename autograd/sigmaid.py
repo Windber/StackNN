@@ -2,9 +2,9 @@
 @author: lenovo
 '''
 import torch
-a = 50
-mingrad = 0.01
-maxgrad = 0.25
+a = 1
+mingrad = 0.
+maxgrad = 1.
  
 class Sigmaid(torch.autograd.Function):
     @staticmethod
