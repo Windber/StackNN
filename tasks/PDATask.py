@@ -194,57 +194,62 @@ class PDATask(Task, metaclass=ABCMeta):
         #actual_count 
         feed_count = 0
         inp_len = x.size()[1]
-        outputs_tensor = torch.Tensor()
+        outputs_tensor = torch.zeros((batch_size, inp_len, self.output_size()))
         z_tensor = torch.Tensor()
          
-        while (torch.sum(self.model._buffer_in._actual).item() != 0. or feed_count < inp_len) and feed_count < self.params.clampstep:
+        #while (torch.sum(self.model._buffer_in._actual).item() != 0. or feed_count < inp_len) and feed_count < self.params.clampstep:
+        for feed_count in range(inp_len*2):
             x_feed = x[:, feed_count, :] if feed_count < inp_len else torch.zeros(batch_size, self.params.input_size)
-            z_tensor = torch.cat([z_tensor, 
-                                #torch.zeros(self.params.batch_size, 1, 1),
-                                torch.zeros(batch_size, 1, 1),
-                                ],
-                                1)
-            z_tensor[:, feed_count, :] = self.model.z#[:, :]#.clone()
-            
-            #size of output: (batch_size, output_size)
-            output = self.model(x_feed)
-            outputs_tensor = torch.cat([outputs_tensor, 
-                                       torch.zeros(batch_size, 1, self.output_size()),
-                                       ],
-                                        1)
-            outputs_tensor[:, feed_count, :] = output[:, :].clone()
-            feed_count += 1
+#             z_tensor = torch.cat([z_tensor, 
+#                                 #torch.zeros(self.params.batch_size, 1, 1),
+#                                 torch.zeros(batch_size, 1, 1),
+#                                 ],
+#                                 1)
+#             z_tensor[:, feed_count, :] = self.model.z#[:, :]#.clone()
+            self.model(x_feed)
         
-        effectsample = self.model._buffer_in._actual == 0
-        #print("Batch %d Forward computation completed." % (name), end='    ')
-        #size of outputs_tensor: (batch_size, characters, output_size)
-        #size of z_tensor: (batch_size, characters, 1)
-        #threshod = 0.99 threshold > 1 - 1/(inp)
-        for bi, sample in enumerate(x):
-            if effectsample[bi, 0].item() == 1:
-                eindex = None
-                for ci, character in enumerate(sample):
-                    if character[-1] == 1:
-                        eindex = ci
-                
-                _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
-                nlo_indices = nonlambda_output_indices
-                c_index = 0
-                for ci in nlo_indices:
-                    ot_pred = outputs_tensor[bi, ci[0]].view(1, -1)
-                    ot = y[bi, c_index]
-                    #if sum(x[bi, c_index]) != 0.:
-                    batch_loss += self.loss_func(ot_pred, ot)
-                    cpred = torch.topk(ot_pred, 1)[1][0][0].item()
-                    c = torch.topk(ot, 1)[0][0].item()
-                    is_correct = 1 if  c == cpred  else 0
-                    self.probe += cpred
-                    batch_correct += is_correct
-                    batch_total += 1
-                    c_index += 1
-                if y[bi, -1].item() == 1:
-                    batch_loss += 0.001 * self.stacklength_lf(self.model._struct._actual[bi], torch.zeros(1))
-            batch_loss += 0.001 * self.stacklength_lf(self.model._buffer_in._actual[bi], torch.zeros(1))
+        for i in range(inp_len):
+#             outputs_tensor = torch.cat([outputs_tensor, 
+#                                        torch.zeros(batch_size, 1, self.output_size()),
+#                                        ],
+#                                         1)
+            output_i = self.model._buffer_out(torch.ones(batch_size, 1), 
+                                              torch.zeros(batch_size, 1), torch.zeros(batch_size, 1), 
+                                              torch.zeros(batch_size, self.params.output_size), torch.zeros(batch_size, self.params.output_size))
+            outputs_tensor[:, i, :] = output_i.clone()
+        yp = outputs_tensor.view(-1, self.output_size())
+        yr = y.view(-1)
+        batch_loss += self.loss_func(yp, yr)
+#         effectsample = self.model._buffer_in._actual == 0
+#         for bi, sample in enumerate(x):
+#             if effectsample[bi, 0].item() == 1:
+#                 eindex = None
+#                 for ci, character in enumerate(sample):
+#                     if character[-1] == 1:
+#                         eindex = ci
+#                 
+#                 _, nonlambda_output_indices = torch.topk(z_tensor[bi], eindex + 1, dim=0)
+#                 nlo_indices = nonlambda_output_indices
+#                 c_index = 0
+#                 for ci in nlo_indices:
+#                     ot_pred = outputs_tensor[bi, ci[0]].view(1, -1)
+#                     ot = y[bi, c_index]
+#                     #if sum(x[bi, c_index]) != 0.:
+#                     batch_loss += self.loss_func(ot_pred, ot)
+#                     cpred = torch.topk(ot_pred, 1)[1][0][0].item()
+#                     c = torch.topk(ot, 1)[0][0].item()
+#                     is_correct = 1 if  c == cpred  else 0
+#                     self.probe += cpred
+#                     batch_correct += is_correct
+#                     batch_total += 1
+#                     c_index += 1
+        cpred = torch.topk(yp, 1, 1)[1].view(-1)
+        batch_correct = torch.sum(cpred==yr).item()
+        batch_total = batch_size * inp_len
+        for bi in range(batch_size):
+            if y[bi, -1].item() == 1:
+                batch_loss += 0.001 * self.stacklength_lf(self.model._struct._actual[bi], torch.zeros(1))
+        batch_loss += 0.001 * self.stacklength_lf(self.model._buffer_in._actual[bi], torch.zeros(1))
         if batch_loss.requires_grad:    
             if is_batch:
                 self.optimizer.zero_grad()
@@ -293,7 +298,7 @@ class PDATask(Task, metaclass=ABCMeta):
                 bt, bc = self._evaluate_batch(test_x, test_y, epoch, False)
             total += bt
             correct += bc
-        print("Test accuracy: %f%%" % (correct / total))
+        print("Test accuracy: %f%%" % (correct * 100 / total))
     def _print_experiment_start(self):
         """
         Prints information about this Task's hyperparameters at the
@@ -318,7 +323,7 @@ class PDACFGTask(PDATask):
             ']': [0, 0, 1, 0 ,0, 0],
             '(': [0, 0, 0, 1 ,0, 0],
             ')': [0, 0, 0, 0 ,1, 0],
-            '#': [0, 0, 0, 0 ,0, 0],
+            '#': [0, 0, 0, 0 ,0, 1],
             }
         DO = {"0": [0], 
               "1": [1],

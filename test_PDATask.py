@@ -1,3 +1,4 @@
+
 '''
 @author: lenovo
 '''
@@ -21,7 +22,7 @@ config_dict = dict()
 config_dict['model_type'] = PDAVanillaModel
 config_dict['controller_type'] = PDAGRUSimpleStructController
 config_dict['struct_type'] = PDAStack
-config_dict['batch_size'] = 8
+config_dict['batch_size'] = 100
 config_dict['clipping_norm'] = 10
 config_dict['leafting_norm'] = 0.02
 config_dict['lifting_norm'] = None
@@ -34,7 +35,7 @@ config_dict['task'] = PDACFGTask
 config_dict['input_size'] = 6
 config_dict['output_size'] = 2
 config_dict['custom_initialization'] = False
-config_dict['trd_path'] = r'./data/train_32_8_16000'
+config_dict['trd_path'] = r'./data/test_32_8_1000'#r'./data/train_32_8_16000'
 config_dict['ted_path'] = r'./data/test_32_8_1000'
 config_dict['save_path'] = r'./savedmodel/the best_RNN_model'
 config_dict['load_path'] = r'./savedmodel/the best_RNN_model@03_15_56'
