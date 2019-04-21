@@ -20,6 +20,7 @@ from .base import Task
 import pandas as pd
 import time
 import random
+alpha = 1.
 class PDATask(Task, metaclass=ABCMeta):
     class Params(Task.Params):
 
@@ -69,7 +70,7 @@ class PDATask(Task, metaclass=ABCMeta):
             super(PDATask.Params, self).__init__(**kwargs)
     def __init__(self, params):
         super(PDATask, self).__init__(params)
-        self.loss_func = torch.nn.CrossEntropyLoss(reduction='sum')
+        self.loss_func = torch.nn.CrossEntropyLoss(weight=torch.Tensor([0.22, 0.78]), reduction='sum')
         self.stacklength_lf = torch.nn.MSELoss(reduction='sum')
         self.probe = 0
     def _init_model(self):
@@ -160,6 +161,8 @@ class PDATask(Task, metaclass=ABCMeta):
 
         :return: None
         """
+        total = 0
+        correct = 0
         if self.model is None:
             raise ValueError("Missing model.")
         if self.train_x is None or self.train_y is None:
@@ -180,8 +183,11 @@ class PDATask(Task, metaclass=ABCMeta):
             y = self.train_y[i:i + self.batch_size, :]
 
             self.model.init_model(self.batch_size)
-            self._evaluate_batch(x, y, batch, True)
-    @timeprofile
+            bt, bc = self._evaluate_batch(x, y, batch, True)
+            total += bt
+            correct += bc
+        print("Train accuracy: %f%%" % (correct * 100 / total))
+    #@timeprofile
     def _evaluate_batch(self, x, y, name, is_batch):
         # size of x: (batch_size, characters, input_size/embedding_size)
         # size of y: (batch_size, characters, output_size)
@@ -198,7 +204,7 @@ class PDATask(Task, metaclass=ABCMeta):
         z_tensor = torch.Tensor()
          
         #while (torch.sum(self.model._buffer_in._actual).item() != 0. or feed_count < inp_len) and feed_count < self.params.clampstep:
-        for feed_count in range(inp_len*2):
+        for feed_count in range(inp_len):
             x_feed = x[:, feed_count, :] if feed_count < inp_len else torch.zeros(batch_size, self.params.input_size)
 #             z_tensor = torch.cat([z_tensor, 
 #                                 #torch.zeros(self.params.batch_size, 1, 1),
@@ -206,17 +212,19 @@ class PDATask(Task, metaclass=ABCMeta):
 #                                 ],
 #                                 1)
 #             z_tensor[:, feed_count, :] = self.model.z#[:, :]#.clone()
-            self.model(x_feed)
+            outp = self.model(x_feed)
+            outputs_tensor[:, feed_count, :] = outp.clone()
         
-        for i in range(inp_len):
+        
 #             outputs_tensor = torch.cat([outputs_tensor, 
 #                                        torch.zeros(batch_size, 1, self.output_size()),
 #                                        ],
 #                                         1)
-            output_i = self.model._buffer_out(torch.ones(batch_size, 1), 
-                                              torch.zeros(batch_size, 1), torch.zeros(batch_size, 1), 
-                                              torch.zeros(batch_size, self.params.output_size), torch.zeros(batch_size, self.params.output_size))
-            outputs_tensor[:, i, :] = output_i.clone()
+#         for i in range(inp_len):
+#             output_i = self.model._buffer_out(torch.ones(batch_size, 1), 
+#                                               torch.zeros(batch_size, 1), torch.zeros(batch_size, 1), 
+#                                               torch.zeros(batch_size, self.params.output_size), torch.zeros(batch_size, self.params.output_size))
+#             outputs_tensor[:, i, :] = output_i.clone()
         yp = outputs_tensor.view(-1, self.output_size())
         yr = y.view(-1)
         batch_loss += self.loss_func(yp, yr)
@@ -246,10 +254,12 @@ class PDATask(Task, metaclass=ABCMeta):
         cpred = torch.topk(yp, 1, 1)[1].view(-1)
         batch_correct = torch.sum(cpred==yr).item()
         batch_total = batch_size * inp_len
+
+
         for bi in range(batch_size):
             if y[bi, -1].item() == 1:
-                batch_loss += 0.001 * self.stacklength_lf(self.model._struct._actual[bi], torch.zeros(1))
-        batch_loss += 0.001 * self.stacklength_lf(self.model._buffer_in._actual[bi], torch.zeros(1))
+                batch_loss += alpha * self.stacklength_lf(self.model._struct._actual[bi], torch.zeros(1))
+        #batch_loss += 0.001 * self.stacklength_lf(self.model._buffer_in._actual[bi], torch.zeros(1))
         if batch_loss.requires_grad:    
             if is_batch:
                 self.optimizer.zero_grad()

@@ -435,7 +435,6 @@ class PDARNNSimpleStructController(SimpleStructController):
     def init_controller(self, batch_size):
         self._init_hidden(batch_size)
         #self._z = 1.
-    @timeprofile
     def forward(self, x, r):
         """
         Computes an output and data structure instructions using a
@@ -573,7 +572,7 @@ class PDAGRUSimpleStructController(SimpleStructController):
                  custom_initialization=False,
                  discourage_pop=False,
                  hidden_size=16,
-                 n_args=2,
+                 n_args=3,
                  **kwargs):
         super(PDAGRUSimpleStructController, self).__init__(input_size,
                                                       read_size,

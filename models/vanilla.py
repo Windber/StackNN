@@ -70,19 +70,21 @@ class PDAVanillaModel(Model):
         #self._z = self._controller.z
     def forward(self, inp=None):
         
-        input_strength = torch.sum(inp, dim=1).view(-1, 1)
-        ibuflen_tminus1 = self._buffer_in._actual
-        inp_real = self._buffer_in(self.z, input_strength, torch.zeros(self.batch_size, 1), inp, Variable(torch.zeros(self.batch_size, self._input_size))) 
-        ibuflen_t = self._buffer_in._actual
-        self.ol = input_strength + ibuflen_tminus1 - ibuflen_t
+        #input_strength = torch.sum(inp, dim=1).view(-1, 1)
+        #ibuflen_tminus1 = self._buffer_in._actual
+        #inp_real = self._buffer_in(self.z, input_strength, torch.zeros(self.batch_size, 1), inp, Variable(torch.zeros(self.batch_size, self._input_size))) 
+        #ibuflen_t = self._buffer_in._actual
+        #self.ol = input_strength + ibuflen_tminus1 - ibuflen_t
         # output, v1, v2, (s1, s2, u, z)
-        o, self._v1, self._v2, (self._s1, self._z)= self._controller(inp_real, self.read)
-        self._s2 = self._s1.clone()
-        self._zo = self._z.clone()
-        self._u = torch.ones(self.batch_size, 1)
+        inp_real = inp
+        #o, self._v1, self._v2, (self._s1, self._z)= self._controller(inp_real, self.read)
+        o, self._v1, self._v2, (self._s1, self._s2, self._u)= self._controller(inp_real, self.read)
+        #self._s2 = self._s1.clone()
+        #self._zo = self._z.clone()
+        #self._u = torch.ones(self.batch_size, 1)
         self.read = self._struct(self._u, self._s1, self._s2, self._v1, self._v2)
-        self._buffer_out(torch.zeros(self.batch_size, 1), self.ol, torch.zeros(self.batch_size, 1), o, torch.zeros(self.batch_size, 1))
-        #return o
+        #self._buffer_out(torch.zeros(self.batch_size, 1), self.ol, torch.zeros(self.batch_size, 1), o, torch.zeros(self.batch_size, 1))
+        return o
 
     """ Accessors """
 
