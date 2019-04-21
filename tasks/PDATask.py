@@ -199,7 +199,7 @@ class PDATask(Task, metaclass=ABCMeta):
         # size of actual_count: (batch_size, 1)
         #actual_count 
         feed_count = 0
-        inp_len = x.size()[1]
+        inp_len = x.size()[1]   
         outputs_tensor = torch.zeros((batch_size, inp_len, self.output_size()))
         z_tensor = torch.Tensor()
          

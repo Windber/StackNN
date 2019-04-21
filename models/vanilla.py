@@ -3,7 +3,7 @@
 
 import torch
 from torch.autograd import Variable
-
+import torch.nn as nn
 from .base import Model
 from controllers.feedforward import LinearSimpleStructController
 from stacknn_utils.errors import unused_init_param
@@ -15,6 +15,7 @@ class PDAVanillaModel(Model):
 
     def __init__(self, input_size, read_size, output_size,
                  controller_type=LinearSimpleStructController, struct_type=PDAStack,
+                 hidden_size=8,
                  **kwargs):
         super(PDAVanillaModel, self).__init__(read_size, struct_type)
         
@@ -33,10 +34,12 @@ class PDAVanillaModel(Model):
         self._v2 = None
         self._ol = None
         
-        self._controller = self._controller_type(input_size, read_size, output_size, **kwargs)
+        self._controller = self._controller_type(input_size, read_size, output_size, hidden_size, **kwargs)
         self._struct = self._struct_type(self._read_size)
         self._buffer_in = PDAQueue(self._input_size)
         self._buffer_out = PDAQueue(self._output_size)
+        self.fc_o = nn.Linear(hidden_size+1, self._output_size)
+        self.tanh = nn.Tanh()
         self._t = 0
         self._zeros = None
 
@@ -78,10 +81,11 @@ class PDAVanillaModel(Model):
         # output, v1, v2, (s1, s2, u, z)
         inp_real = inp
         #o, self._v1, self._v2, (self._s1, self._z)= self._controller(inp_real, self.read)
-        o, self._v1, self._v2, (self._s1, self._s2, self._u)= self._controller(inp_real, self.read)
+        hidden, self._v1, self._v2, (self._s1, self._s2, self._u)= self._controller(inp_real, self.read)
         #self._s2 = self._s1.clone()
         #self._zo = self._z.clone()
         #self._u = torch.ones(self.batch_size, 1)
+        o = self.tanh(self.fc_o(torch.cat([hidden, self._struct._actual], 1)))
         self.read = self._struct(self._u, self._s1, self._s2, self._v1, self._v2)
         #self._buffer_out(torch.zeros(self.batch_size, 1), self.ol, torch.zeros(self.batch_size, 1), o, torch.zeros(self.batch_size, 1))
         return o
@@ -145,6 +149,7 @@ class VanillaModel(Model):
 
     def __init__(self, input_size, read_size, output_size,
                  controller_type=LinearSimpleStructController, struct_type=Stack,
+                 hidden_size=8,
                  **kwargs):
         """
         Constructor for the VanillaModel object.
@@ -171,12 +176,12 @@ class VanillaModel(Model):
         """
         super(VanillaModel, self).__init__(read_size, struct_type)
         self._read = None
-        self._controller = controller_type(input_size, read_size, output_size,
+        self._controller = controller_type(input_size, read_size, output_size, hidden_size
                                      **kwargs)
         self._input_size = input_size
         self._output_size = output_size
         self._read_size = read_size
-
+        self._hidden_size = hidden_size
         self._buffer_in = None
         self._buffer_out = None
 

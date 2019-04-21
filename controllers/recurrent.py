@@ -569,9 +569,9 @@ class PDALSTMSimpleStructController(SimpleStructController):
 
 class PDAGRUSimpleStructController(SimpleStructController):
     def __init__(self, input_size, read_size, output_size,
-                 custom_initialization=False,
+                 #custom_initialization=None,
                  discourage_pop=False,
-                 hidden_size=16,
+                 hidden_size=8,
                  n_args=3,
                  **kwargs):
         super(PDAGRUSimpleStructController, self).__init__(input_size,
@@ -589,30 +589,30 @@ class PDAGRUSimpleStructController(SimpleStructController):
         nn_input_size = self._input_size + self._read_size
         nn_output_size = self._n_args + self._read_size * 2 + self._output_size
         self._gru = nn.GRUCell(nn_input_size, hidden_size)
-        self._linear_nargs = nn.Linear(hidden_size, self._n_args)
-        #self._sigmoid_nargs = nn.Sigmoid()
-        self._sigmoid_nargs = Sigmaid.apply
-        self._linear_v1 = nn.Linear(hidden_size, self._read_size)
+        self._linear_nargs = nn.Linear(nn_input_size+hidden_size, self._n_args)
+        self._sigmoid_nargs = nn.Sigmoid()
+        #self._sigmoid_nargs = Sigmaid.apply
+        self._linear_v1 = nn.Linear(nn_input_size+hidden_size, self._read_size)
         self._tanh_v1 = nn.Tanh()
-        self._linear_v2 = nn.Linear(hidden_size, self._read_size)
+        self._linear_v2 = nn.Linear(nn_input_size+hidden_size, self._read_size)
         self._tanh_v2 = nn.Tanh()
-        self._linear_o = nn.Linear(hidden_size, self._output_size)
-        self._tanh_o = nn.Tanh()
+        #self._linear_o = nn.Linear(hidden_size, self._output_size)
+        #self._tanh_o = nn.Tanh()
 
-        if custom_initialization:
-            PDAGRUSimpleStructController.init_normal(self._gru.weight_hh)
-            PDAGRUSimpleStructController.init_normal(self._gru.weight_ih)
-            self._gru.bias_hh.data.fill_(0)
-            self._gru.bias_ih.data.fill_(0)
-
-            PDAGRUSimpleStructController.init_normal(self._linear.weight)
-            self._linear.bias.data.fill_(0)
-
-        if discourage_pop:
-            self._linear.bias.data[0] = -1.  # Discourage popping
-            if n_args >= 4:
-                self._linear.bias.data[2] = 1.  # Encourage reading
-                self._linear.bias.data[3] = 1.  # Encourage writing
+#         if custom_initialization:
+#             PDAGRUSimpleStructController.init_normal(self._gru.weight_hh)
+#             PDAGRUSimpleStructController.init_normal(self._gru.weight_ih)
+#             self._gru.bias_hh.data.fill_(0)
+#             self._gru.bias_ih.data.fill_(0)
+# 
+#             PDAGRUSimpleStructController.init_normal(self._linear.weight)
+#             self._linear.bias.data.fill_(0)
+# 
+#         if discourage_pop:
+#             self._linear.bias.data[0] = -1.  # Discourage popping
+#             if n_args >= 4:
+#                 self._linear.bias.data[2] = 1.  # Encourage reading
+#                 self._linear.bias.data[3] = 1.  # Encourage writing
 
     def _init_hidden(self, batch_size):
         """
@@ -650,17 +650,19 @@ class PDAGRUSimpleStructController(SimpleStructController):
                 - pop a strength u from the data structure
                 - push v with strength d to the data structure
         """
-        self._hidden = self._gru(torch.cat([x, r], 1), self._hidden)
-
-        output = self._tanh_o(self._linear_o(self._hidden))
-        v1 = self._tanh_v1(self._linear_v1(self._hidden))
-        v2 = self._tanh_v2(self._linear_v2(self._hidden))
-        nargs = self._sigmoid_nargs(self._linear_nargs(self._hidden))
+        x_r = torch.cat([x, r], 1)
+        x_r_h = torch.cat([x_r, self._hidden], 1)
+        v1 = self._tanh_v1(self._linear_v1(x_r_h))
+        v2 = self._tanh_v2(self._linear_v2(x_r_h))
+        nargs = self._sigmoid_nargs(self._linear_nargs(x_r_h))
+        self._hidden = self._gru(x_r, self._hidden)
+        #output = self._tanh_o(self._linear_o(torch.cat([self._hidden, self.))
+        
         instructions = tuple(nargs[:, j].contiguous().view(-1, 1) for j in range(self._n_args))
         # To do
-        self._log(x, output, v1, *instructions)
+        #self._log(x, output, v1, *instructions)
         # output, v1, v2, (s1, s2, u, z)
-        return output, v1, v2, instructions
+        return self._hidden, v1, v2, instructions
 
     @property
     def z(self):
