@@ -20,7 +20,7 @@ from .base import Task
 import pandas as pd
 import time
 import random
-alpha = 1.
+alpha = .025
 class PDATask(Task, metaclass=ABCMeta):
     class Params(Task.Params):
 
