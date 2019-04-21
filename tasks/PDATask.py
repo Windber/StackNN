@@ -255,7 +255,6 @@ class PDATask(Task, metaclass=ABCMeta):
         batch_correct = torch.sum(cpred==yr).item()
         batch_total = batch_size * inp_len
 
-
         for bi in range(batch_size):
             if y[bi, -1].item() == 1:
                 batch_loss += alpha * self.stacklength_lf(self.model._struct._actual[bi], torch.zeros(1))
