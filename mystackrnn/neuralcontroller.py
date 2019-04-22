@@ -1,32 +1,30 @@
-from controllers.base import SimpleStructController
 import torch.nn as nn
 import numpy as np
-class PDAGRUSimpleStructController(SimpleStructController):
-    def __init__(self, batch_size, input_size, hidden_size, read_size, output_size, n_args,):
-        super().__init__(input_size, read_size, output_size, n_args)
-        self._hidden = None
-        self.batch_size = batch_size
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.read_size = read_size
-        self.output_size = output_size
-        self.n_args = n_args
-        # Create an GRU Module object
+import torch
+class GRUController(nn.Module):
+    def __init__(self, config_dict):
+        
+        super().__init__()
+        self.hidden = None
+        self.params = config_dict
+        
         controller_input_size = self.input_size + self.read_size
-        #nn_output_size = self.n_args + self.read_size * 2 + self.output_size
-        self.rnn = nn.GRUCell(controller_input_size, hidden_size)
-        self.fc_nargs = nn.Linear(hidden_size, self._n_args)
+        
+        self.rnn = nn.GRUCell(controller_input_size, self.hidden_size)
+        self.fc_nargs = nn.Linear(self.hidden_size, self.n_args)
         self.sigmoid = nn.Sigmoid()
-        self.fc_v1 = nn.Linear(hidden_size, self._read_size)
-        self.fc_v2 = nn.Linear(hidden_size, self._read_size)
-        self.fc_o = nn.Linear(hidden_size, self._output_size)
+        self.fc_v1 = nn.Linear(self.hidden_size, self.read_size)
+        self.fc_v2 = nn.Linear(self.hidden_size, self.read_size)
+        self.fc_o = nn.Linear(self.hidden_size, self.output_size)
         self.tanh = nn.Tanh()
-    def init(self, batch_size=None):
-        if batch_size:
-            self.batch_size = batch_size
-        hidden_shape = (batch_size, self._gru.hidden_size)
-        self._hidden = torch.zeros(hidden_shape)
-
+    def init(self):
+        hidden_shape = (self.batch_size, self.hidden_size)
+        self.hidden = torch.zeros(hidden_shape)
+    def __getattr__(self, name):
+        if name in self.params:
+            return self.params[name]
+        else:
+            return super().__getattr__(name)
     def forward(self, x, r):
         """
         Computes an output and data structure instructions using a
@@ -45,14 +43,13 @@ class PDAGRUSimpleStructController(SimpleStructController):
                 - pop a strength u from the data structure
                 - push v with strength d to the data structure
         """
-        self._hidden = self._gru(torch.cat([x, r], 1), self._hidden)
-        output = self.tanh(self.fc_o(self._hidden))
-        v1 = self.tanh(self.fc_v1(self._hidden))
-        v2 = self.tanh(self.fc_v2(self._hidden))
-        nargs = self.sigmoid(self.fc_nargs(self._hidden))
-        nargs = nargs.view(nargs.shape[0], nargs.shape[1], 1)
-        instructions = torch.split(nargs, list(np.ones(self.nargs, dtype=np.int32)), dim=1)
-        # output, v1, v2, (s1, s2, u)
+        self.hidden = self.rnn(torch.cat([x, r], 1), self.hidden)
+        output = self.tanh(self.fc_o(self.hidden))
+        v1 = self.tanh(self.fc_v1(self.hidden))
+        v2 = self.tanh(self.fc_v2(self.hidden))
+        nargs = self.sigmoid(self.fc_nargs(self.hidden))
+        instructions = torch.split(nargs, list(np.ones(self.n_args, dtype=np.int32)), dim=1)
+        
         return output, v1, v2, instructions
 
     

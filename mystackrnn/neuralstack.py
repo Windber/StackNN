@@ -1,23 +1,21 @@
 import torch.nn as nn
 from abc import ABCMeta, abstractmethod
 import torch
-from structs.simple import SimpleStruct 
-class NeuralMemory(SimpleStruct, metaclass=ABCMeta):
-    def __init__(self, batch_size, read_size, k=None):
-        super().__init__(batch_size, read_size)
+import mystackrnn
+class NeuralMemory(nn.Module):
+    def __init__(self, kwargs):
+        super().__init__()
+        self.params = kwargs
         self._values = None
         self._strengths = None
         self._actual = None
-        self.batch_size = batch_size
-        self.read_size = read_size 
+        
     def forward(self, u, d1, d2, v1, v2, r=None):
         self.push(d1, d2, v1, v2)
         readcontent = self.read(u)
         self.pop(u)
         return readcontent
-    def init(self, batch_size=None):
-        if batch_size:
-            self.batch_size = batch_size
+    def init(self):
         self._values = list()
         self._strengths = list()
         self._actual = torch.zeros(self.batch_size, 1)
@@ -43,8 +41,14 @@ class NeuralMemory(SimpleStruct, metaclass=ABCMeta):
             tmp = self._strengths[i]
             self._strengths[i] = self._strengths[i] - torch.min(self._strengths[i], torch.max(torch.zeros(self.batch_size, 1), u - strength_used))
             strength_used += tmp
-
-class PDAStack(NeuralMemory):
+    def __getattr__(self, name):
+        if name in self.params:
+            return self.params[name]
+        else:
+            return super().__getattr__(name)
+class NeuralStack(NeuralMemory):
+    def __init__(self, kwargs):
+        super().__init__(kwargs)
     def _pop_indices(self):
         return list(range(len(self._strengths)-1, -1, -1))
     
@@ -54,7 +58,10 @@ class PDAStack(NeuralMemory):
     def _read_indices(self):
         return list(range(len(self._strengths)-1, -1, -1))
     
-class PDAQueue(NeuralMemory):
+class NeuralQueue(NeuralMemory):
+    def __init__(self, kwargs):
+        super().__init__(kwargs)
+        
     def _pop_indices(self):
         return list(range(0, len(self._strengths)))
     
@@ -63,3 +70,7 @@ class PDAQueue(NeuralMemory):
     
     def _read_indices(self):
         return list(range(0, len(self._strengths)))
+if __name__ == "__main__":
+    from  mystackrnn.profile import config_dyck2
+    ns = NeuralStack(config_dyck2)
+    print(ns)
