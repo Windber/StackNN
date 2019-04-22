@@ -1,27 +1,31 @@
 from models.base import Model
-class PDAVanillaModel(Model):
+class StackRNNCell(Model):
 
-    def __init__(self, input_size, read_size, output_size,
+    def __init__(self, batch_size, input_size, hidden_size, read_size, output_size,
                  controller_type, struct_type,
                  **kwargs):
-        super(PDAVanillaModel, self).__init__(read_size, struct_type)
+        super().__init__(read_size, struct_type)
         
-        self._controller_type = controller_type
-        self._input_size = input_size
-        self._output_size = output_size
+        self.input_size = input_size
+        self.output_size = output_size
+        self.hidden_size = hidden_size
+        self.read_size = read_size
+        self.batch_size = batch_size
+        
         
         self._read = None
-        self._z = None
-        self._zo = None
-
         self._u = None
         self._s1 = None
         self._s2 = None
         self._v1 = None
         self._v2 = None
+        #self._z = None
+        #self._zo = None
+
+        
         self._ol = None
         
-        self._controller = self._controller_type(input_size, read_size, output_size, **kwargs)
+        self.controller = controller_type(input_size, hidden_size, read_size, output_size, **kwargs)
         self._struct = self._struct_type(self._read_size)
         self._buffer_in = PDAQueue(self._input_size)
         self._buffer_out = PDAQueue(self._output_size)
