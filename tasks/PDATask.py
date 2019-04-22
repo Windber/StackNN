@@ -20,7 +20,7 @@ from .base import Task
 import pandas as pd
 import time
 import random
-alpha = .025
+alpha = .05
 class PDATask(Task, metaclass=ABCMeta):
     class Params(Task.Params):
 
@@ -64,6 +64,7 @@ class PDATask(Task, metaclass=ABCMeta):
             self.kfold = kwargs.get("kfold", 10)
             self.model = kwargs.get("model", "manytoone")
             self.clampstep = kwargs.get("clampstep", 64)
+            self.is_training = kwargs.get("is_training", True)
             #del kwargs["input_size"]
             #del kwargs["output_size"]
             #del kwargs["leafting_norm"]
@@ -132,10 +133,13 @@ class PDATask(Task, metaclass=ABCMeta):
                 self.evaluate()
                 #need to record the score of each model and save the best model
         else:
-            for epoch in range(self.params.epochs):
+            epoch = 0
+            self.epoch_acc = 1.
+            while self.epoch_acc > 0.01:
                 self.run_epoch(epoch)
-                if self.batch_acc >= accuracy_best:
-                    accuracy_best = self.batch_acc
+                epoch += 1
+                if self.epoch_acc >= accuracy_best:
+                    accuracy_best = self.epoch_acc
                     if self.save_path:
                         torch.save(self.model.state_dict(), self.save_path + time.strftime("@%d_%H_%M"))
                         self._has_trained_model = True
@@ -163,6 +167,7 @@ class PDATask(Task, metaclass=ABCMeta):
         """
         total = 0
         correct = 0
+        el = 0
         if self.model is None:
             raise ValueError("Missing model.")
         if self.train_x is None or self.train_y is None:
@@ -183,10 +188,13 @@ class PDATask(Task, metaclass=ABCMeta):
             y = self.train_y[i:i + self.batch_size, :]
 
             self.model.init_model(self.batch_size)
-            bt, bc = self._evaluate_batch(x, y, batch, True)
+            bt, bc, bl = self._evaluate_batch(x, y, batch, True)
             total += bt
             correct += bc
+            el +=  bl
+        self.epoch_acc = el / total
         print("Train accuracy: %f%%" % (correct * 100 / total))
+        print("Train loss: %f" % (el / total))
     #@timeprofile
     def _evaluate_batch(self, x, y, name, is_batch):
         # size of x: (batch_size, characters, input_size/embedding_size)
@@ -270,14 +278,13 @@ class PDATask(Task, metaclass=ABCMeta):
                 self.optimizer.step()
                 #consume_time = time.time() - start_time
                 #print("Backard computation completed. Total consumed: %ds" % (consume_time))
-            # Log the results.
-            if batch_total != 0:
-                self._print_batch_summary(name, is_batch, batch_loss / batch_total, batch_correct,
-                                          batch_total)
-        
+            # Log the results
+#             self._print_batch_summary(name, is_batch, batch_loss / batch_total, batch_correct,
+#                                       batch_total)
+#     
                 # Make the accuracy accessible for early stopping.
                 self.batch_acc = batch_correct / batch_total
-        return batch_total, batch_correct
+        return batch_total, batch_correct, batch_loss.item()
         
         #print("Bacth %s: cosume %ds actual %d steps average %f s/step" % (name, consume_time, feed_count, consume_time/feed_count))
     def evaluate(self, epoch):
@@ -304,7 +311,7 @@ class PDATask(Task, metaclass=ABCMeta):
             
             self.model.init_model(len(test_x))
             with torch.no_grad():
-                bt, bc = self._evaluate_batch(test_x, test_y, epoch, False)
+                bt, bc, _ = self._evaluate_batch(test_x, test_y, epoch, False)
             total += bt
             correct += bc
         print("Test accuracy: %f%%" % (correct * 100 / total))

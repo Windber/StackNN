@@ -29,23 +29,25 @@ config_dict['lifting_norm'] = None
 config_dict['cuda'] = False
 config_dict['epochs'] = 100
 config_dict['hidden_size'] = 8
-config_dict['learning_rate'] = 1e-3
+config_dict['learning_rate'] = 1e-4
 config_dict['read_size'] = 2
 config_dict['task'] = PDACFGTask
 config_dict['input_size'] = 6
 config_dict['output_size'] = 2
 config_dict['custom_initialization'] = False
 config_dict['trd_path'] = r'./data/train_32_8_16000'
-config_dict['ted_path'] = r'./data/test_32_8_1000'
+#config_dict['ted_path'] = r'./data/test_32_8_1000'
+config_dict['ted_path'] = r'./data/test_256_816_1000'
 config_dict['save_path'] = r'./savedmodel/the best_RNN_model'
-config_dict['load_path'] = r'./savedmodel/the best_RNN_model@21_21_26'
-config_dict["load"] = False
+config_dict['load_path'] = r'./savedmodel/the best_RNN_model@22_04_47'
+config_dict["load"] = True
 config_dict['cross_validation'] = False
 config_dict['kfold'] = 10
 config_dict['model'] = "manytomany"
 config_dict['clampstep'] = 64
+config_dict["is_training"] = True
 pct = PDACFGTask.from_config_dict(config_dict)
-if not pct._has_trained_model:
+if pct.params.is_training:
     acc = pct.run_experiment()
     print(acc)
 else:
